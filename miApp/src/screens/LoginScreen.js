@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import { StyleSheet, View, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Text, TextInput, Button, Divider, IconButton } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { roleColors } from '../theme/theme';
 import { validateAdminCredentials, ADMIN_ERROR_MESSAGE } from '../config/adminConfig';
+import { useApp } from '../context/AppContext';
 
 export default function LoginScreen({ route, navigation }) {
   const { role = 'productor' } = route.params || {};
+  const { login } = useApp();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -40,24 +42,44 @@ export default function LoginScreen({ route, navigation }) {
       setTimeout(() => {
         if (validateAdminCredentials(email, password)) {
           console.log('✅ Login exitoso - Administrador');
+          
+          // Crear usuario administrador
+          const userData = {
+            nombre: 'Administrador',
+            apellido: 'Sistema',
+            email: email,
+            telefono: 'N/A',
+            role: 'administrador',
+          };
+          
+          login(userData);
           setLoading(false);
-          // navigation.navigate('HomeAdmin');
-          alert('🔐 Acceso de administrador concedido');
         } else {
           setLoading(false);
-          alert(ADMIN_ERROR_MESSAGE);
+          Alert.alert('Error de autenticación', ADMIN_ERROR_MESSAGE);
         }
       }, 1500);
       return;
     }
     
-    // Login normal para productor y consumidor (aquí irá tu API)
+    // Login normal para productor y consumidor (simulado)
     setTimeout(() => {
       console.log('Login:', { email, password, role });
+      
+      // Simular datos del usuario (en producción vendrían de tu API)
+      const userData = {
+        nombre: email.split('@')[0],
+        apellido: 'Usuario',
+        email: email,
+        telefono: '+123456789',
+        role: role,
+        roleData: role === 'productor' 
+          ? { nombreFinca: 'Mi Finca', tipoProductos: 'Vegetales' }
+          : { direccion: 'Av. Principal 123' },
+      };
+      
+      login(userData);
       setLoading(false);
-      // Navegar a la pantalla principal según el rol
-      // navigation.navigate('Home', { role });
-      alert(`✅ Bienvenido ${config.title}`);
     }, 1500);
   };
 

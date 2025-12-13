@@ -1,6 +1,7 @@
-import { MD3LightTheme } from 'react-native-paper';
+import { MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 
-export const theme = {
+// Tema Claro (Light)
+export const lightTheme = {
   ...MD3LightTheme,
   colors: {
     ...MD3LightTheme.colors,
@@ -41,6 +42,52 @@ export const theme = {
   },
   roundness: 12,
 };
+
+// Tema Oscuro (Dark) - Fondo completamente negro
+export const darkTheme = {
+  ...MD3DarkTheme,
+  colors: {
+    ...MD3DarkTheme.colors,
+    primary: '#A8D070', // Verde más claro para modo oscuro
+    primaryContainer: '#4A6B1F',
+    secondary: '#C9A87C', // Marrón más claro
+    secondaryContainer: '#5C3F28',
+    tertiary: '#FFB84D', // Dorado más brillante
+    background: '#000000', // Fondo completamente negro
+    surface: '#1C1C1E', // Cards un poco más claros que el fondo
+    surfaceVariant: '#2C2C2E',
+    error: '#FF6B6B',
+    errorContainer: '#8B0000',
+    onPrimary: '#1A2E00',
+    onPrimaryContainer: '#C5E19F',
+    onSecondary: '#2C1A0D',
+    onSecondaryContainer: '#E8D5C1',
+    onBackground: '#FFFFFF', // Texto blanco sobre fondo negro
+    onSurface: '#FFFFFF', // Texto blanco sobre surfaces
+    onSurfaceVariant: '#E0E0E0',
+    onError: '#690005',
+    onErrorContainer: '#FFDAD6',
+    outline: '#8E8E93',
+    outlineVariant: '#3A3A3C',
+    shadow: '#000000',
+    scrim: '#000000',
+    inverseSurface: '#E6E1E5',
+    inverseOnSurface: '#000000',
+    inversePrimary: '#6B9B37',
+    elevation: {
+      level0: 'transparent',
+      level1: '#1C1C1E',
+      level2: '#2C2C2E',
+      level3: '#3A3A3C',
+      level4: '#48484A',
+      level5: '#58585A',
+    },
+  },
+  roundness: 12,
+};
+
+// Exportar tema por defecto (para compatibilidad)
+export const theme = lightTheme;
 
 // Colores específicos para roles
 export const roleColors = {
