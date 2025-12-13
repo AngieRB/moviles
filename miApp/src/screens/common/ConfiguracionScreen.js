@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView } from 'react-native';
-import { Text, Card, Switch, List, Button, Divider, Snackbar } from 'react-native-paper';
+import { Text, Card, Switch, List, Button, Divider, Snackbar, useTheme } from 'react-native-paper';
 import { useApp } from '../../context/AppContext';
 
 export default function ConfiguracionScreen({ navigation }) {
@@ -174,14 +174,13 @@ const styles = StyleSheet.create({
   },
   themePreview: {
     marginTop: 16,
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+    padding: 12,
+    backgroundColor: 'rgba(107, 155, 55, 0.1)',
+    borderRadius: 8,
   },
-  content: {
-    padding: 16,
-    paddingBottom: 32,
-    flex: 1,
+  themeStatus: {
+    marginBottom: 4,
+    opacity: 0.8,
   },
   infoRow: {
     flexDirection: 'row',
