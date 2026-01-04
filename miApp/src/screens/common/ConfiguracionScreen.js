@@ -3,6 +3,7 @@ import { StyleSheet, View, ScrollView } from 'react-native';
 import { Text, Card, Switch, List, Button, Divider, Snackbar, useTheme } from 'react-native-paper';
 import { useApp } from '../../context/AppContext';
 
+// Pantalla de Configuración común para todos los usuarios
 export default function ConfiguracionScreen({ navigation }) {
   const { themeMode, setTheme, isDarkMode, logout } = useApp();
   const theme = useTheme();

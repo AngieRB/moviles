@@ -3,6 +3,7 @@ import { StyleSheet, View, ScrollView } from 'react-native';
 import { Text, Card, Avatar, TextInput, Button, Snackbar, useTheme } from 'react-native-paper';
 import { useApp } from '../../context/AppContext';
 
+// Pantalla de Perfil común para todos los usuarios
 export default function PerfilScreen() {
   const { user, updateUser } = useApp();
   const theme = useTheme();

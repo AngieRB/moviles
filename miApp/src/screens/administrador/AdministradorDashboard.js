@@ -8,6 +8,7 @@ import ConfiguracionScreen from '../common/ConfiguracionScreen';
 
 const Tab = createBottomTabNavigator();
 
+// Dashboard del Administrador con pestañas para Inicio, Perfil y Configuración
 export default function AdministradorDashboard() {
   const theme = useTheme();
 

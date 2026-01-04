@@ -3,6 +3,7 @@ import { StyleSheet, View, ScrollView } from 'react-native';
 import { Text, Card, Avatar, useTheme } from 'react-native-paper';
 import { useApp } from '../../context/AppContext';
 
+// Pantalla de Inicio común para todos los usuarios
 export default function InicioScreen() {
   const { user, personalizedGreeting } = useApp();
   const theme = useTheme();
