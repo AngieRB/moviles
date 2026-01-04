@@ -81,3 +81,18 @@ export default function AppNavigator() {
     </NavigationContainer>
   );
 }
+
+// Ajuste para manejar la acción RESET
+export function handleNavigationReset(navigation, isAuthenticated, user) {
+  if (!isAuthenticated) {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Welcome' }],
+    });
+  } else {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: `${user.role}Dashboard` }],
+    });
+  }
+}

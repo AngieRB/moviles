@@ -2,9 +2,14 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { View } from 'react-native';
 import InicioScreen from '../common/InicioScreen';
 import PerfilScreen from '../common/PerfilScreen';
 import ConfiguracionScreen from '../common/ConfiguracionScreen';
+import PedidosPendientesScreen from './PedidosPendientesScreen';
+import AgregarProductoScreen from './AgregarProductoScreen';
+import ChatClientesScreen from './ChatClientesScreen';
+import ProductosScreen from './ProductosScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -13,8 +18,8 @@ export default function ProductorDashboard() {
 
   return (
     <Tab.Navigator
-      screenOptions={{
-        tabBarActiveTintColor: '#6B9B37', // Verde productor
+      screenOptions={({ navigation }) => ({
+        tabBarActiveTintColor: '#6B9B37',
         tabBarInactiveTintColor: 'gray',
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
@@ -30,7 +35,16 @@ export default function ProductorDashboard() {
         headerTitleStyle: {
           fontWeight: 'bold',
         },
-      }}
+        headerRight: () => (
+          <Icon
+            name="cog"
+            size={24}
+            color="#FFFFFF"
+            onPress={() => navigation.navigate('Configuracion')}
+            style={{ marginRight: 15 }}
+          />
+        ),
+      })}
     >
       <Tab.Screen
         name="Inicio"
@@ -43,6 +57,46 @@ export default function ProductorDashboard() {
         }}
       />
       <Tab.Screen
+        name="PedidosPendientes"
+        component={PedidosPendientesScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="calendar" size={size} color={color} />
+          ),
+          headerTitle: 'Pedidos Pendientes',
+        }}
+      />
+      <Tab.Screen
+        name="AgregarProducto"
+        component={AgregarProductoScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="plus-circle" size={size} color={color} />
+          ),
+          headerTitle: 'Agregar Producto',
+        }}
+      />
+      <Tab.Screen
+        name="Productos"
+        component={ProductosScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="shopping" size={size} color={color} />
+          ),
+          headerTitle: 'Mis Productos',
+        }}
+      />
+      <Tab.Screen
+        name="ChatClientes"
+        component={ChatClientesScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="message" size={size} color={color} />
+          ),
+          headerTitle: 'Chat con Clientes',
+        }}
+      />
+      <Tab.Screen
         name="Perfil"
         component={PerfilScreen}
         options={{
@@ -50,17 +104,6 @@ export default function ProductorDashboard() {
             <Icon name="account" size={size} color={color} />
           ),
           headerTitle: 'Mi Perfil',
-        }}
-      />
-      <Tab.Screen
-        name="Configuracion"
-        component={ConfiguracionScreen}
-        options={{
-          tabBarLabel: 'Configuración',
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="cog" size={size} color={color} />
-          ),
-          headerTitle: 'Configuración',
         }}
       />
     </Tab.Navigator>

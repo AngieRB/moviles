@@ -28,8 +28,12 @@ export default function RegisterScreen({ route, navigation }) {
       icon: '🌾',
       color: roleColors.productor.primary,
       additionalFields: [
+        { key: 'cedula', label: 'Cédula *', icon: 'card-account-details' },
         { key: 'nombreFinca', label: 'Nombre de la finca', icon: 'barn' },
-        { key: 'tipoProductos', label: 'Tipo de productos', icon: 'sprout' },
+        { key: 'ubicacionGPS', label: 'Ubicación GPS', icon: 'map-marker' },
+        { key: 'tipoCultivos', label: 'Tipo de cultivos (3 a 5)', icon: 'sprout', type: 'select', options: ['Maíz', 'Cacao', 'Café', 'Verde', 'Tomate', 'Naranja', 'Banano', 'Otros'] },
+        { key: 'fotoCedula', label: 'Foto de la cédula', icon: 'camera' },
+        { key: 'fotoFinca', label: 'Foto de la finca', icon: 'camera' },
       ],
     },
     consumidor: {
@@ -37,7 +41,8 @@ export default function RegisterScreen({ route, navigation }) {
       icon: '🛒',
       color: roleColors.consumidor.primary,
       additionalFields: [
-        { key: 'direccion', label: 'Dirección de entrega', icon: 'map-marker' },
+        { key: 'cedula', label: 'Cédula *', icon: 'card-account-details' },
+        { key: 'direccionEntrega', label: 'Dirección de entrega', icon: 'map-marker' },
       ],
     },
     administrador: {
@@ -61,19 +66,26 @@ export default function RegisterScreen({ route, navigation }) {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es requerido';
     if (!formData.apellido.trim()) newErrors.apellido = 'El apellido es requerido';
     if (!formData.email.trim()) {
       newErrors.email = 'El correo es requerido';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Correo inválido';
+    } else if (!isUniqueEmail(formData.email)) {
+      newErrors.email = 'El correo ya está registrado';
+    }
+    if (!formData.cedula.trim()) {
+      newErrors.cedula = 'La cédula es requerida';
+    } else if (!isUniqueCedula(formData.cedula)) {
+      newErrors.cedula = 'La cédula ya está registrada';
     }
     if (!formData.telefono.trim()) newErrors.telefono = 'El teléfono es requerido';
     if (!formData.password) {
       newErrors.password = 'La contraseña es requerida';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Mínimo 6 caracteres';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Mínimo 8 caracteres';
     }
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Las contraseñas no coinciden';
@@ -104,6 +116,18 @@ export default function RegisterScreen({ route, navigation }) {
       // Navegar al login o home
       navigation.navigate('Login', { role });
     }, 1500);
+  };
+
+  const isUniqueEmail = (email) => {
+    // Simular validación de correo único
+    const existingEmails = ['test@example.com', 'user@example.com'];
+    return !existingEmails.includes(email);
+  };
+
+  const isUniqueCedula = (cedula) => {
+    // Simular validación de cédula única
+    const existingCedulas = ['123456789', '987654321'];
+    return !existingCedulas.includes(cedula);
   };
 
   return (
