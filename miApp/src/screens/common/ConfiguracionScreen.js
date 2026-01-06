@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView } from 'react-native';
-import { Text, Card, Switch, List, Button, Divider, Snackbar, useTheme } from 'react-native-paper';
+import { Text, Card, Switch, List, Button, Divider, Snackbar, useTheme, FAB } from 'react-native-paper'; // <--- 1. Agregamos FAB aquí
 import { useApp } from '../../context/AppContext';
 
-// Pantalla de Configuración común para todos los usuarios
 export default function ConfiguracionScreen({ navigation }) {
   const { themeMode, setTheme, isDarkMode, logout } = useApp();
   const theme = useTheme();
@@ -22,7 +21,6 @@ export default function ConfiguracionScreen({ navigation }) {
 
   const handleLogout = () => {
     logout();
-    // Navegar a la pantalla de bienvenida
     navigation.reset({
       index: 0,
       routes: [{ name: 'Welcome' }],
@@ -30,115 +28,137 @@ export default function ConfiguracionScreen({ navigation }) {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.content}>
-        {/* Configuración de Tema */}
-        <Card style={styles.card} mode="elevated">
-          <Card.Content>
-            <Text variant="titleLarge" style={styles.cardTitle}>
-              🎨 Apariencia
-            </Text>
-            <Text variant="bodyMedium" style={styles.subtitle}>
-              Cambia entre tema claro y oscuro
-            </Text>
-            
-            <View style={styles.themeOptions}>
+    // 2. Cambiamos el contenedor principal a una View normal con flex: 1
+    // para poder usar posicionamiento absoluto dentro de ella.
+    <View style={[styles.mainContainer, { backgroundColor: theme.colors.background }]}>
+      
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.content}>
+          {/* Configuración de Tema */}
+          <Card style={styles.card} mode="elevated">
+            <Card.Content>
+              <Text variant="titleLarge" style={styles.cardTitle}>
+                🎨 Apariencia
+              </Text>
+              <Text variant="bodyMedium" style={styles.subtitle}>
+                Cambia entre tema claro y oscuro
+              </Text>
+              
+              <View style={styles.themeOptions}>
+                <List.Item
+                  title={isDarkMode ? "Tema Oscuro" : "Tema Claro"}
+                  description={isDarkMode 
+                    ? "Fondo negro, ideal para la noche 🌙" 
+                    : "Fondo blanco, ideal para el día ☀️"
+                  }
+                  left={() => (
+                    <List.Icon 
+                      icon={isDarkMode ? "moon-waning-crescent" : "white-balance-sunny"} 
+                    />
+                  )}
+                  right={() => (
+                    <Switch
+                      value={isDarkMode}
+                      onValueChange={handleThemeToggle}
+                    />
+                  )}
+                />
+              </View>
+
+              <View style={styles.themePreview}>
+                <Text variant="bodySmall" style={styles.themeStatus}>
+                  Tema activo: {isDarkMode ? '🌙 Oscuro' : '☀️ Claro'}
+                </Text>
+              </View>
+            </Card.Content>
+          </Card>
+
+          {/* Configuración General */}
+          <Card style={styles.card} mode="elevated">
+            <Card.Content>
+              <Text variant="titleLarge" style={styles.cardTitle}>
+                ⚙️ General
+              </Text>
+              
               <List.Item
-                title={isDarkMode ? "Tema Oscuro" : "Tema Claro"}
-                description={isDarkMode 
-                  ? "Fondo negro, ideal para la noche 🌙" 
-                  : "Fondo blanco, ideal para el día ☀️"
-                }
-                left={() => (
-                  <List.Icon 
-                    icon={isDarkMode ? "moon-waning-crescent" : "white-balance-sunny"} 
-                  />
-                )}
-                right={() => (
-                  <Switch
-                    value={isDarkMode}
-                    onValueChange={handleThemeToggle}
-                  />
-                )}
+                title="Notificaciones"
+                description="Recibe alertas importantes"
+                left={() => <List.Icon icon="bell" />}
+                right={() => <Switch value={true} />}
               />
-            </View>
+              <Divider />
+              <List.Item
+                title="Idioma"
+                description="Español"
+                left={() => <List.Icon icon="translate" />}
+                right={() => <List.Icon icon="chevron-right" />}
+              />
+              <Divider />
+              <List.Item
+                title="Ayuda y soporte"
+                description="Obtén ayuda sobre la app"
+                left={() => <List.Icon icon="help-circle" />}
+                right={() => <List.Icon icon="chevron-right" />}
+              />
+            </Card.Content>
+          </Card>
 
-            <View style={styles.themePreview}>
-              <Text variant="bodySmall" style={styles.themeStatus}>
-                Tema activo: {isDarkMode ? '🌙 Oscuro' : '☀️ Claro'}
+          {/* Información de la App */}
+          <Card style={styles.card} mode="elevated">
+            <Card.Content>
+              <Text variant="titleLarge" style={styles.cardTitle}>
+                ℹ️ Acerca de
               </Text>
-            </View>
-          </Card.Content>
-        </Card>
+              <View style={styles.infoRow}>
+                <Text variant="bodyMedium" style={styles.label}>
+                  Versión:
+                </Text>
+                <Text variant="bodyMedium">1.0.0</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text variant="bodyMedium" style={styles.label}>
+                  Aplicación:
+                </Text>
+                <Text variant="bodyMedium">AgroConnect</Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text variant="bodyMedium" style={styles.label}>
+                  Desarrollado por:
+                </Text>
+                <Text variant="bodyMedium">Tu equipo</Text>
+              </View>
+            </Card.Content>
+          </Card>
 
-        {/* Configuración General */}
-        <Card style={styles.card} mode="elevated">
-          <Card.Content>
-            <Text variant="titleLarge" style={styles.cardTitle}>
-              ⚙️ General
-            </Text>
-            
-            <List.Item
-              title="Notificaciones"
-              description="Recibe alertas importantes"
-              left={() => <List.Icon icon="bell" />}
-              right={() => <Switch value={true} />}
-            />
-            <Divider />
-            <List.Item
-              title="Idioma"
-              description="Español"
-              left={() => <List.Icon icon="translate" />}
-              right={() => <List.Icon icon="chevron-right" />}
-            />
-            <Divider />
-            <List.Item
-              title="Ayuda y soporte"
-              description="Obtén ayuda sobre la app"
-              left={() => <List.Icon icon="help-circle" />}
-              right={() => <List.Icon icon="chevron-right" />}
-            />
-          </Card.Content>
-        </Card>
+          {/* Botón de Cerrar Sesión */}
+          <Button
+            mode="contained"
+            onPress={handleLogout}
+            icon="logout"
+            style={styles.logoutButton}
+            buttonColor="#D32F2F"
+          >
+            Cerrar Sesión
+          </Button>
+        </View>
+      </ScrollView>
 
-        {/* Información de la App */}
-        <Card style={styles.card} mode="elevated">
-          <Card.Content>
-            <Text variant="titleLarge" style={styles.cardTitle}>
-              ℹ️ Acerca de
-            </Text>
-            <View style={styles.infoRow}>
-              <Text variant="bodyMedium" style={styles.label}>
-                Versión:
-              </Text>
-              <Text variant="bodyMedium">1.0.0</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text variant="bodyMedium" style={styles.label}>
-                Aplicación:
-              </Text>
-              <Text variant="bodyMedium">AgroConnect</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text variant="bodyMedium" style={styles.label}>
-                Desarrollado por:
-              </Text>
-              <Text variant="bodyMedium">Tu equipo</Text>
-            </View>
-          </Card.Content>
-        </Card>
-
-        {/* Botón de Cerrar Sesión */}
-        <Button
-          mode="contained"
-          onPress={handleLogout}
-          icon="logout"
-          style={styles.logoutButton}
-          buttonColor="#D32F2F"
-        >
-          Cerrar Sesión
-        </Button>
-      </View>
+      {/* 3. AQUI ESTÁ EL BOTÓN DE FLECHA FLOTANTE CORREGIDO */}
+      <FAB
+        icon="arrow-left"
+        label=""
+        onPress={() => navigation.goBack()}
+        mode="elevated"
+        color={isDarkMode ? '#000' : '#fff'}
+        style={{ 
+           position: 'absolute',
+           margin: 20,
+           left: 0,
+           bottom: 0,
+           backgroundColor: isDarkMode ? '#fff' : '#554747ff',
+           zIndex: 100 // Esto asegura que el botón flote sobre todo lo demás
+        }}
+      />
 
       <Snackbar
         visible={snackbarVisible}
@@ -147,17 +167,19 @@ export default function ConfiguracionScreen({ navigation }) {
       >
         {snackbarMessage}
       </Snackbar>
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  mainContainer: {
+    flex: 1, // Ocupa toda la pantalla
+  },
+  scrollContent: {
+    paddingBottom: 80, // Espacio extra abajo para que el botón no tape contenido
   },
   content: {
     padding: 16,
-    paddingBottom: 32,
   },
   card: {
     marginBottom: 16,
@@ -194,6 +216,6 @@ const styles = StyleSheet.create({
   },
   logoutButton: {
     marginTop: 16,
-    marginBottom: 32,
+    marginBottom: 16,
   },
 });

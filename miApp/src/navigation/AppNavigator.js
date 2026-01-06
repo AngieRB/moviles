@@ -7,12 +7,16 @@ import { useApp } from '../context/AppContext';
 import WelcomeScreen from '../screens/WelcomeScreen';
 import RoleSelectionScreen from '../screens/RoleSelectionScreen';
 import LoginScreen from '../screens/LoginScreen';
-import RegisterScreen from '../screens/RegisterScreen';
+import RegisterProductor from '../screens/RegisterProductor';
+import RegisterConsumidor from '../screens/RegisterConsumidor';
 
 // Dashboards por rol
 import ProductorDashboard from '../screens/productor/ProductorDashboard';
 import ConsumidorDashboard from '../screens/consumidor/ConsumidorDashboard';
 import AdministradorDashboard from '../screens/administrador/AdministradorDashboard';
+
+// Pantallas adicionales
+import ConfiguracionScreen from '../screens/common/ConfiguracionScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -46,9 +50,14 @@ export default function AppNavigator() {
               options={{ title: 'Iniciar Sesión' }}
             />
             <Stack.Screen 
-              name="Register" 
-              component={RegisterScreen}
-              options={{ title: 'Registrarse' }}
+              name="RegisterProductor" 
+              component={RegisterProductor}
+              options={{ title: 'Registrarse como Productor' }}
+            />
+            <Stack.Screen 
+              name="RegisterConsumidor" 
+              component={RegisterConsumidor}
+              options={{ title: 'Registrarse como Consumidor' }}
             />
           </>
         ) : (
@@ -75,6 +84,11 @@ export default function AppNavigator() {
                 options={{ title: 'Dashboard Administrador' }}
               />
             )}
+            <Stack.Screen 
+              name="Configuracion" 
+              component={ConfiguracionScreen} 
+              options={{ title: 'Configuración' }} 
+            />
           </>
         )}
       </Stack.Navigator>

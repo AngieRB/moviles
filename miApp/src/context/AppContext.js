@@ -21,6 +21,12 @@ export const AppProvider = ({ children }) => {
   // Estado del tema (light o dark)
   const [themeMode, setThemeMode] = useState('light'); // 'light' o 'dark'
   
+  // Estado de los usuarios registrados
+  const [registeredUsers, setRegisteredUsers] = useState([]);
+  
+  // Estado de autenticación
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  
   // Determinar si está en modo oscuro
   const isDarkMode = themeMode === 'dark';
 
@@ -36,11 +42,13 @@ export const AppProvider = ({ children }) => {
       // Datos específicos por rol
       ...userData.roleData,
     });
+    setIsAuthenticated(true);
   };
 
   // Logout del usuario
   const logout = () => {
     setUser(null);
+    setIsAuthenticated(false);
   };
 
   // Actualizar datos del usuario
@@ -76,10 +84,15 @@ export const AppProvider = ({ children }) => {
     ? `${getGreeting()}, ${user.nombre}!`
     : getGreeting();
 
+  // Registrar un nuevo usuario
+  const registerUser = (userData) => {
+    setRegisteredUsers(prev => [...prev, userData]);
+  };
+
   const value = {
     // Estado del usuario
     user,
-    isAuthenticated: !!user,
+    isAuthenticated,
     
     // Funciones de autenticación
     login,
@@ -97,6 +110,12 @@ export const AppProvider = ({ children }) => {
     // Utilidades
     personalizedGreeting,
     getGreeting,
+
+    // Estado de usuarios registrados
+    registeredUsers,
+
+    // Funciones de registro
+    registerUser,
   };
 
   return (

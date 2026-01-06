@@ -187,21 +187,20 @@ export default function LoginScreen({ route, navigation }) {
             Iniciar Sesión
           </Button>
 
-          {/* Eliminada la sección de registro para administrador */}
-          {role !== 'administrador' && (
-            <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>
-                ¿No tienes cuenta?
-              </Text>
-              <Button
-                mode="text"
-                onPress={() => navigation.navigate('Register', { role })}
-                labelStyle={[styles.registerButtonLabel, { color: config.color }]}
-              >
-                Regístrate aquí
-              </Button>
-            </View>
-          )}
+          <Divider style={styles.divider} />
+
+          <View style={styles.registerContainer}>
+            <Text variant="bodyMedium" style={styles.registerText}>
+              ¿No tienes cuenta?
+            </Text>
+            <Button
+              mode="text"
+              onPress={() => navigation.navigate('Register', { role })}
+              labelStyle={[styles.registerButtonLabel, { color: config.color }]}
+            >
+              Regístrate aquí
+            </Button>
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -281,12 +280,14 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
   },
+  divider: {
+    marginVertical: 24,
+  },
   registerContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     flexWrap: 'wrap',
-    marginTop: 8,
   },
   registerText: {
     color: '#666666',
