@@ -1,0 +1,387 @@
+import React, { useState } from 'react';
+import {
+  View,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
+import { Card, Text, Button, Divider } from 'react-native-paper';
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+
+export default function DetalleProductoScreen({ route, navigation }) {
+  const { producto } = route.params;
+  const [cantidad, setCantidad] = useState(1);
+
+  const agregarAlCarrito = () => {
+    Alert.alert(
+      'Éxito',
+      `${cantidad} ${cantidad === 1 ? 'unidad' : 'unidades'} de ${producto.nombre} agregadas al carrito`,
+      [
+        {
+          text: 'Continuar comprando',
+          onPress: () => navigation.goBack(),
+        },
+        {
+          text: 'Ir al carrito',
+          onPress: () => navigation.navigate('Carrito'),
+          style: 'default',
+        },
+      ]
+    );
+  };
+
+  const aumentarCantidad = () => {
+    if (cantidad < producto.disponibles) {
+      setCantidad(cantidad + 1);
+    }
+  };
+
+  const disminuirCantidad = () => {
+    if (cantidad > 1) {
+      setCantidad(cantidad - 1);
+    }
+  };
+
+  const precioTotal = (producto.precio * cantidad).toFixed(2);
+
+  return (
+    <ScrollView style={styles.container}>
+      {/* Imagen grande del producto */}
+      <Card style={styles.imagenCard}>
+        <View style={styles.imagenContainer}>
+          <Text style={styles.imagenGrande}>{producto.imagen}</Text>
+        </View>
+      </Card>
+
+      {/* Información del producto */}
+      <View style={styles.infoSection}>
+        <Text style={styles.nombre}>{producto.nombre}</Text>
+
+        <View style={styles.ratingRow}>
+          <View style={styles.ratingContainer}>
+            <Icon name="star" size={18} color="#FFD700" />
+            <Text style={styles.rating}>{producto.calificacion}</Text>
+            <Text style={styles.reviews}>(120 reseñas)</Text>
+          </View>
+          <Text style={styles.disponibles}>
+            {producto.disponibles} disponibles
+          </Text>
+        </View>
+
+        <Divider style={styles.divider} />
+
+        <View style={styles.productorContainer}>
+          <Icon name="account-circle" size={24} color="#4A90E2" />
+          <View style={styles.productorInfo}>
+            <Text style={styles.productorLabel}>Vendido por</Text>
+            <Text style={styles.productorNombre}>{producto.productor}</Text>
+          </View>
+        </View>
+
+        <Divider style={styles.divider} />
+
+        {/* Precio y cantidad */}
+        <View style={styles.precioSection}>
+          <View>
+            <Text style={styles.precioLabel}>Precio unitario</Text>
+            <Text style={styles.precio}>${producto.precio.toFixed(2)}</Text>
+          </View>
+        </View>
+
+        <Text style={styles.cantidadLabel}>Cantidad</Text>
+        <View style={styles.cantidadSelector}>
+          <TouchableOpacity
+            style={styles.btnCantidad}
+            onPress={disminuirCantidad}
+          >
+            <Icon name="minus" size={20} color="#4A90E2" />
+          </TouchableOpacity>
+          <Text style={styles.cantidadTexto}>{cantidad}</Text>
+          <TouchableOpacity
+            style={styles.btnCantidad}
+            onPress={aumentarCantidad}
+            disabled={cantidad >= producto.disponibles}
+          >
+            <Icon
+              name="plus"
+              size={20}
+              color={cantidad >= producto.disponibles ? '#ccc' : '#4A90E2'}
+            />
+          </TouchableOpacity>
+        </View>
+
+        <Divider style={styles.divider} />
+
+        {/* Resumen de compra */}
+        <View style={styles.resumenContainer}>
+          <View style={styles.resumenRow}>
+            <Text style={styles.resumenLabel}>Subtotal:</Text>
+            <Text style={styles.resumenValor}>
+              ${(producto.precio * cantidad).toFixed(2)}
+            </Text>
+          </View>
+          <View style={styles.resumenRow}>
+            <Text style={styles.resumenLabel}>Envío:</Text>
+            <Text style={styles.resumenValor}>$0.00</Text>
+          </View>
+          <Divider />
+          <View style={[styles.resumenRow, styles.totalRow]}>
+            <Text style={styles.totalLabel}>Total:</Text>
+            <Text style={styles.totalValor}>${precioTotal}</Text>
+          </View>
+        </View>
+
+        {/* Descripción */}
+        <View style={styles.descripcionSection}>
+          <Text style={styles.descripcionTitulo}>Descripción del producto</Text>
+          <Text style={styles.descripcionTexto}>
+            Producto de alta calidad, cultivado de forma natural y sin químicos
+            dañinos. Perfecto para una alimentación saludable y sostenible.
+            Entrega rápida a tu domicilio.
+          </Text>
+        </View>
+
+        <View style={styles.caracteristicasSection}>
+          <Text style={styles.caracteristicasTitulo}>Características</Text>
+          <View style={styles.caracteristica}>
+            <Icon name="leaf" size={16} color="#4CAF50" />
+            <Text style={styles.caracteristicaTexto}>100% Orgánico</Text>
+          </View>
+          <View style={styles.caracteristica}>
+            <Icon name="truck-fast" size={16} color="#FF9800" />
+            <Text style={styles.caracteristicaTexto}>
+              Entrega en 24-48 horas
+            </Text>
+          </View>
+          <View style={styles.caracteristica}>
+            <Icon name="shield-check" size={16} color="#2196F3" />
+            <Text style={styles.caracteristicaTexto}>
+              Garantía de calidad
+            </Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Botones de acción */}
+      <View style={styles.actionButtons}>
+        <Button
+          mode="outlined"
+          onPress={() => navigation.goBack()}
+          style={styles.btnContinuar}
+        >
+          Volver
+        </Button>
+        <Button
+          mode="contained"
+          onPress={agregarAlCarrito}
+          style={styles.btnAgregar}
+          labelStyle={styles.btnAgregarLabel}
+        >
+          Agregar al carrito
+        </Button>
+      </View>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  imagenCard: {
+    margin: 12,
+    elevation: 2,
+  },
+  imagenContainer: {
+    height: 250,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  imagenGrande: {
+    fontSize: 120,
+  },
+  infoSection: {
+    backgroundColor: '#fff',
+    marginHorizontal: 12,
+    marginTop: 12,
+    borderRadius: 8,
+    padding: 16,
+  },
+  nombre: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  rating: {
+    marginLeft: 4,
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  reviews: {
+    marginLeft: 4,
+    fontSize: 12,
+    color: '#999',
+  },
+  disponibles: {
+    fontSize: 12,
+    color: '#4A90E2',
+    fontWeight: 'bold',
+  },
+  divider: {
+    marginVertical: 12,
+  },
+  productorContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  productorInfo: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  productorLabel: {
+    fontSize: 11,
+    color: '#999',
+  },
+  productorNombre: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 2,
+  },
+  precioSection: {
+    marginVertical: 8,
+  },
+  precioLabel: {
+    fontSize: 12,
+    color: '#999',
+    marginBottom: 4,
+  },
+  precio: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#4A90E2',
+  },
+  cantidadLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginVertical: 12,
+  },
+  cantidadSelector: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    backgroundColor: '#f5f5f5',
+    alignSelf: 'flex-start',
+  },
+  btnCantidad: {
+    padding: 12,
+  },
+  cantidadTexto: {
+    marginHorizontal: 16,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    minWidth: 40,
+    textAlign: 'center',
+  },
+  resumenContainer: {
+    backgroundColor: '#f9f9f9',
+    padding: 12,
+    borderRadius: 8,
+    marginVertical: 12,
+  },
+  resumenRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  resumenLabel: {
+    fontSize: 12,
+    color: '#666',
+  },
+  resumenValor: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#333',
+  },
+  totalRow: {
+    paddingVertical: 10,
+  },
+  totalLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  totalValor: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#4A90E2',
+  },
+  descripcionSection: {
+    marginTop: 16,
+  },
+  descripcionTitulo: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  descripcionTexto: {
+    fontSize: 12,
+    color: '#666',
+    lineHeight: 18,
+  },
+  caracteristicasSection: {
+    marginTop: 16,
+  },
+  caracteristicasTitulo: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+  },
+  caracteristica: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  caracteristicaTexto: {
+    marginLeft: 8,
+    fontSize: 12,
+    color: '#666',
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    paddingHorizontal: 12,
+    paddingVertical: 16,
+    gap: 8,
+  },
+  btnContinuar: {
+    flex: 1,
+    borderColor: '#4A90E2',
+  },
+  btnAgregar: {
+    flex: 1,
+    backgroundColor: '#4A90E2',
+  },
+  btnAgregarLabel: {
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+});
