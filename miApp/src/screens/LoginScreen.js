@@ -195,7 +195,13 @@ export default function LoginScreen({ route, navigation }) {
             </Text>
             <Button
               mode="text"
-              onPress={() => navigation.navigate('Register', { role })}
+              onPress={() => {
+                if (role === 'productor') {
+                  navigation.navigate('RegisterProductor');
+                } else if (role === 'consumidor') {
+                  navigation.navigate('RegisterConsumidor');
+                }
+              }}
               labelStyle={[styles.registerButtonLabel, { color: config.color }]}
             >
               Regístrate aquí
