@@ -42,7 +42,7 @@ class AuthController extends Controller
             'message' => 'Login exitoso',
             'user' => [
                 'id' => $user->id,
-                'nombre' => $user->nombre,
+                'name' => $user->name,
                 'apellido' => $user->apellido,
                 'email' => $user->email,
                 'telefono' => $user->telefono,
@@ -59,7 +59,7 @@ class AuthController extends Controller
     public function registerConsumidor(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'cedula' => 'required|string|unique:users,cedula',
             'telefono' => 'required|string',
             'email' => 'required|email|unique:users,email',
@@ -71,7 +71,7 @@ class AuthController extends Controller
         }
 
         $user = User::create([
-            'nombre' => $request->nombre,
+            'name' => $request->name,
             'apellido' => '', // Puedes separar nombre completo si lo necesitas
             'cedula' => $request->cedula,
             'telefono' => $request->telefono,
@@ -87,7 +87,7 @@ class AuthController extends Controller
             'message' => '¡Cuenta de consumidor creada exitosamente!',
             'user' => [
                 'id' => $user->id,
-                'nombre' => $user->nombre,
+                'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
             ],
@@ -101,7 +101,7 @@ class AuthController extends Controller
     public function registerProductor(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'nombre' => 'required|string|max:255',
+            'name' => 'required|string|max:255',
             'cedula' => 'required|string|unique:users,cedula',
             'telefono' => 'required|string',
             'email' => 'required|email|unique:users,email',
@@ -120,7 +120,7 @@ class AuthController extends Controller
         }
 
         $user = User::create([
-            'nombre' => $request->nombre,
+            'name' => $request->name,
             'apellido' => '',
             'cedula' => $request->cedula,
             'telefono' => $request->telefono,
@@ -144,7 +144,7 @@ class AuthController extends Controller
             'message' => '¡Cuenta de productor creada exitosamente!',
             'user' => [
                 'id' => $user->id,
-                'nombre' => $user->nombre,
+                'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
                 'roleData' => json_decode($user->role_data),
@@ -154,14 +154,14 @@ class AuthController extends Controller
     }
 
     /**
-     * Logout
+     * Logout de usuario
      */
     public function logout(Request $request)
     {
-        $request->user()->currentAccessToken()->delete();
+        $request->user()->tokens()->delete();
 
         return response()->json([
-            'message' => 'Sesión cerrada exitosamente',
+            'message' => 'Logout exitoso',
         ], 200);
     }
 
@@ -175,7 +175,7 @@ class AuthController extends Controller
         return response()->json([
             'user' => [
                 'id' => $user->id,
-                'nombre' => $user->nombre,
+                'name' => $user->name,
                 'apellido' => $user->apellido,
                 'email' => $user->email,
                 'telefono' => $user->telefono,

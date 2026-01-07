@@ -26,7 +26,7 @@ Route::get('/categorias', [ProductoController::class, 'categorias']);
 // ============================================
 
 Route::middleware('auth:sanctum')->group(function () {
-    
+
     // Usuario autenticado
     Route::get('/user', function (Request $request) {
         return $request->user();
@@ -37,10 +37,10 @@ Route::middleware('auth:sanctum')->group(function () {
     // ============================================
     // PRODUCTOS
     // ============================================
-    
+
     // Listar productos del productor autenticado
     Route::get('/mis-productos', [ProductoController::class, 'misProductos']);
-    
+
     // CRUD de productos (solo productores)
     Route::post('/productos', [ProductoController::class, 'store']);
     Route::put('/productos/{id}', [ProductoController::class, 'update']);
@@ -49,7 +49,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ============================================
     // CARRITO (solo consumidores)
     // ============================================
-    
+
     Route::get('/carrito', [CarritoController::class, 'index']);
     Route::post('/carrito', [CarritoController::class, 'store']);
     Route::put('/carrito/{id}', [CarritoController::class, 'update']);
@@ -59,12 +59,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // ============================================
     // PEDIDOS
     // ============================================
-    
+
     // Consumidores
     Route::get('/mis-pedidos', [PedidoController::class, 'misPedidos']);
     Route::get('/pedidos/{id}', [PedidoController::class, 'show']);
     Route::post('/pedidos', [PedidoController::class, 'store']);
-    
+
     // Productores
     Route::get('/pedidos-pendientes', [PedidoController::class, 'pedidosPendientes']);
     Route::put('/pedidos/{id}/estado', [PedidoController::class, 'updateEstado']);

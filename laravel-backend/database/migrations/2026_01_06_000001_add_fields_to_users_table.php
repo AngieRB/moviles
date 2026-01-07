@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('nombre')->after('id');
-            $table->string('apellido')->nullable()->after('nombre');
+            $table->string('name')->after('id');
+            $table->string('apellido')->nullable()->after('name');
             $table->string('cedula')->unique()->nullable()->after('apellido');
             $table->string('telefono')->nullable()->after('cedula');
             $table->enum('role', ['productor', 'consumidor', 'administrador'])->default('consumidor')->after('email');
@@ -27,7 +27,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['nombre', 'apellido', 'cedula', 'telefono', 'role', 'role_data']);
+            $table->dropColumn(['name', 'apellido', 'cedula', 'telefono', 'role', 'role_data']);
         });
     }
 };
