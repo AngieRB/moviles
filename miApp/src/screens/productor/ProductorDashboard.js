@@ -106,6 +106,16 @@ export default function ProductorDashboard() {
           headerTitle: 'Mi Perfil',
         }}
       />
-    </Tab.Navigator>
-  );
-}
+      <Tab.Screen
+              name="ConfiguracionTab"
+              component={ConfiguracionScreen}
+              options={{
+                tabBarIcon: ({ color, size }) => (
+                  <Icon name="cog" size={size} color={color} />
+                ),
+                tabBarLabel: 'Config',
+              }}
+            />
+          </Tab.Navigator>
+        );
+      }
