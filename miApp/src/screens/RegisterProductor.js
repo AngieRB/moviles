@@ -17,7 +17,7 @@ export default function RegisterProductor({ route, navigation }) {
   // Estado para los pasos del registro
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    nombre: '',
+    name: '',
     cedula: '',
     telefono: '',
     email: '',
@@ -104,7 +104,7 @@ export default function RegisterProductor({ route, navigation }) {
   const validateStep = () => {
     const newErrors = {};
     if (step === 1) {
-      if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es requerido';
+      if (!formData.name.trim()) newErrors.nombre = 'El nombre es requerido';
       // Validación cédula: solo números, 10 dígitos
       if (!formData.cedula.trim()) {
         newErrors.cedula = 'La cédula es requerida';
@@ -192,7 +192,7 @@ export default function RegisterProductor({ route, navigation }) {
           <>
             <Text variant="headlineMedium" style={styles.title}>Registro Productor</Text>
             <View style={styles.form}>
-              <TextInput label="Nombre Completo" value={formData.nombre} onChangeText={text => updateFormData('nombre', text)} mode="outlined" style={styles.input} outlineColor={roleColors.productor.primary} activeOutlineColor={roleColors.productor.primary} error={!!errors.nombre} />
+              <TextInput label="Nombre Completo" value={formData.name} onChangeText={text => updateFormData('name', text)} mode="outlined" style={styles.input} outlineColor={roleColors.productor.primary} activeOutlineColor={roleColors.productor.primary} error={!!errors.nombre} />
               {errors.nombre && <HelperText type="error">{errors.nombre}</HelperText>}
               <TextInput label="Cédula" value={formData.cedula} onChangeText={text => updateFormData('cedula', text.replace(/[^0-9]/g, ''))} mode="outlined" style={styles.input} outlineColor={roleColors.productor.primary} activeOutlineColor={roleColors.productor.primary} error={!!errors.cedula} keyboardType="numeric" maxLength={10} />
               {errors.cedula && <HelperText type="error">{errors.cedula}</HelperText>}

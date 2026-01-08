@@ -8,7 +8,7 @@ export default function RegisterConsumidor({ navigation }) {
   const role = 'consumidor';
 
   const [formData, setFormData] = useState({
-    nombre: '',
+    name: '',
     cedula: '',
     telefono: '',
     email: '',
@@ -28,7 +28,7 @@ export default function RegisterConsumidor({ navigation }) {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.nombre.trim()) newErrors.nombre = 'El nombre es requerido';
+    if (!formData.name.trim()) newErrors.name = 'El nombre es requerido';
     if (!formData.cedula.trim()) newErrors.cedula = 'La cédula es requerida';
     if (!formData.telefono.trim()) newErrors.telefono = 'El teléfono es requerido';
     if (!formData.email.trim()) {
@@ -73,8 +73,8 @@ export default function RegisterConsumidor({ navigation }) {
 
         <Text variant="headlineMedium" style={styles.title}>Registro Consumidor</Text>
         <View style={styles.form}>
-          <TextInput label="Nombre Completo" value={formData.nombre} onChangeText={text => updateFormData('nombre', text)} mode="outlined" style={styles.input} outlineColor={roleColors[role].primary} activeOutlineColor={roleColors[role].primary} error={!!errors.nombre} />
-          {errors.nombre && <HelperText type="error">{errors.nombre}</HelperText>}
+          <TextInput label="Nombre Completo" value={formData.name} onChangeText={text => updateFormData('name', text)} mode="outlined" style={styles.input} outlineColor={roleColors[role].primary} activeOutlineColor={roleColors[role].primary} error={!!errors.name} />
+          {errors.name && <HelperText type="error">{errors.name}</HelperText>}
           <TextInput label="Cédula" value={formData.cedula} onChangeText={text => updateFormData('cedula', text)} mode="outlined" style={styles.input} outlineColor={roleColors[role].primary} activeOutlineColor={roleColors[role].primary} error={!!errors.cedula} />
           {errors.cedula && <HelperText type="error">{errors.cedula}</HelperText>}
           <TextInput label="Teléfono/WhatsApp" value={formData.telefono} onChangeText={text => updateFormData('telefono', text)} mode="outlined" style={styles.input} outlineColor={roleColors[role].primary} activeOutlineColor={roleColors[role].primary} error={!!errors.telefono} />

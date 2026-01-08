@@ -18,7 +18,7 @@ class DatabaseSeeder extends Seeder
     {
         // Crear usuario Productor de prueba
         User::create([
-            'nombre' => 'Juan',
+            'name' => 'Juan',
             'apellido' => 'Pérez',
             'cedula' => '1234567890',
             'telefono' => '0987654321',
@@ -34,7 +34,7 @@ class DatabaseSeeder extends Seeder
 
         // Crear usuario Consumidor de prueba
         User::create([
-            'nombre' => 'María',
+            'name' => 'María',
             'apellido' => 'González',
             'cedula' => '0987654321',
             'telefono' => '0991234567',
@@ -49,7 +49,7 @@ class DatabaseSeeder extends Seeder
 
         // Crear usuario Administrador de prueba
         User::create([
-            'nombre' => 'Admin',
+            'name' => 'Admin',
             'apellido' => 'Sistema',
             'cedula' => '0000000000',
             'telefono' => 'N/A',
