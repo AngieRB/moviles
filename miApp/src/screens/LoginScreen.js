@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
-import { Text, TextInput, Button, Divider, IconButton } from 'react-native-paper';
+import { Text, TextInput, Button, Divider, IconButton, Snackbar } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { roleColors } from '../theme/theme';
 import { validateAdminCredentials, ADMIN_ERROR_MESSAGE } from '../config/adminConfig';
 import { useApp } from '../context/AppContext';
+import apiClient from '../services/apiClient';
 
 export default function LoginScreen({ route, navigation }) {
   const { role = 'productor' } = route.params || {};
@@ -13,6 +14,7 @@ export default function LoginScreen({ route, navigation }) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const roleConfig = {
     productor: {
@@ -35,52 +37,85 @@ export default function LoginScreen({ route, navigation }) {
   const config = roleConfig[role];
 
   const handleLogin = async () => {
+    // Validar campos
+    if (!email || !password) {
+      setError('Todos los campos son obligatorios');
+      return;
+    }
+
     setLoading(true);
+    setError('');
     
     // Validación especial para administrador con credenciales fijas
     if (role === 'administrador') {
-      setTimeout(() => {
+      setTimeout(async () => {
         if (validateAdminCredentials(email, password)) {
           console.log('✅ Login exitoso - Administrador');
           
           // Crear usuario administrador
           const userData = {
+            id: 1,
             nombre: 'Administrador',
             apellido: 'Sistema',
             email: email,
             telefono: 'N/A',
             role: 'administrador',
+            cedula: 'ADMIN',
           };
           
-          login(userData);
+          // Crear un token ficticio para el administrador
+          await login(userData, 'admin-token-local');
           setLoading(false);
         } else {
           setLoading(false);
           Alert.alert('Error de autenticación', ADMIN_ERROR_MESSAGE);
         }
-      }, 1500);
+      }, 1000);
       return;
     }
     
-    // Login normal para productor y consumidor (simulado)
-    setTimeout(() => {
-      console.log('Login:', { email, password, role });
+    // LOGIN REAL PARA PRODUCTOR Y CONSUMIDOR - CONSUME LA API
+    try {
+      console.log('📡 Intentando login con API...', { email, role });
       
-      // Simular datos del usuario (en producción vendrían de tu API)
-      const userData = {
-        nombre: email.split('@')[0],
-        apellido: 'Usuario',
-        email: email,
-        telefono: '+123456789',
-        role: role,
-        roleData: role === 'productor' 
-          ? { nombreFinca: 'Mi Finca', tipoProductos: 'Vegetales' }
-          : { direccion: 'Av. Principal 123' },
-      };
+      const { data } = await apiClient.post('/login', {
+        email,
+        password,
+        role,
+      });
       
-      login(userData);
+      console.log('✅ Login exitoso:', data);
+      
+      // Guardar usuario y token
+      await login(data.user, data.token);
+      
+    } catch (error) {
+      console.error('❌ Error en login:', error);
+      
+      if (error.response) {
+        // El servidor respondió con un código de error
+        const statusCode = error.response.status;
+        const errorMessage = error.response.data?.message || 
+                           error.response.data?.errors?.email?.[0] ||
+                           'Error de autenticación';
+        
+        if (statusCode === 422) {
+          setError('Correo o contraseña incorrectos');
+        } else if (statusCode === 404) {
+          setError('No se encontró el servidor. Verifica la conexión.');
+        } else {
+          setError(errorMessage);
+        }
+      } else if (error.request) {
+        // No se recibió respuesta del servidor
+        setError('No se pudo conectar con el servidor. Verifica tu conexión a internet y que el servidor Laravel esté ejecutándose.');
+      } else {
+        // Otro tipo de error
+        setError('Error inesperado: ' + error.message);
+      }
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   const handleForgotPassword = () => {
@@ -208,6 +243,20 @@ export default function LoginScreen({ route, navigation }) {
             </Button>
           </View>
         </View>
+
+        {/* Snackbar para errores */}
+        <Snackbar
+          visible={!!error}
+          onDismiss={() => setError('')}
+          duration={5000}
+          action={{
+            label: 'Cerrar',
+            onPress: () => setError(''),
+          }}
+          style={styles.snackbar}
+        >
+          {error}
+        </Snackbar>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -301,5 +350,8 @@ const styles = StyleSheet.create({
   registerButtonLabel: {
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  snackbar: {
+    backgroundColor: '#B00020',
   },
 });

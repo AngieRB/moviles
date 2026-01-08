@@ -1,5 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { useColorScheme } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiClient from '../services/apiClient';
 
 // Crear el contexto
 const AppContext = createContext();
@@ -18,6 +20,9 @@ export const AppProvider = ({ children }) => {
   // Estado del usuario autenticado
   const [user, setUser] = useState(null);
   
+  // Token de autenticación
+  const [token, setToken] = useState(null);
+  
   // Estado del tema (light o dark)
   const [themeMode, setThemeMode] = useState('light'); // 'light' o 'dark'
   
@@ -27,28 +32,51 @@ export const AppProvider = ({ children }) => {
   // Estado de autenticación
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
+  // Estado de carga de autenticación
+  const [loadingAuth, setLoadingAuth] = useState(true);
+  
   // Determinar si está en modo oscuro
   const isDarkMode = themeMode === 'dark';
 
-  // Login del usuario
-  const login = (userData) => {
+  // Login del usuario - AHORA GUARDA EN ASYNCSTORAGE
+  const login = async (userData, tokenValue) => {
     setUser({
+      id: userData.id,
       nombre: userData.nombre,
       apellido: userData.apellido,
       email: userData.email,
       telefono: userData.telefono,
       role: userData.role,
       avatar: userData.avatar || null,
+      cedula: userData.cedula,
       // Datos específicos por rol
-      ...userData.roleData,
+      roleData: userData.roleData || null,
     });
+    setToken(tokenValue);
     setIsAuthenticated(true);
+    
+    // Guardar en AsyncStorage para persistencia
+    await AsyncStorage.setItem('token', tokenValue);
+    await AsyncStorage.setItem('user', JSON.stringify(userData));
   };
 
-  // Logout del usuario
-  const logout = () => {
+  // Logout del usuario - LLAMA A LA API Y LIMPIA ASYNCSTORAGE
+  const logout = async () => {
+    try {
+      // Intentar cerrar sesión en el backend
+      await apiClient.post('/logout');
+    } catch (error) {
+      console.log('Error al cerrar sesión en el servidor:', error);
+    }
+    
+    // Limpiar estado local
     setUser(null);
+    setToken(null);
     setIsAuthenticated(false);
+    
+    // Limpiar AsyncStorage
+    await AsyncStorage.removeItem('token');
+    await AsyncStorage.removeItem('user');
   };
 
   // Actualizar datos del usuario
@@ -89,10 +117,34 @@ export const AppProvider = ({ children }) => {
     setRegisteredUsers(prev => [...prev, userData]);
   };
 
+  // Cargar sesión guardada al iniciar la app
+  useEffect(() => {
+    const loadSession = async () => {
+      try {
+        const storedToken = await AsyncStorage.getItem('token');
+        const storedUser = await AsyncStorage.getItem('user');
+        
+        if (storedToken && storedUser) {
+          setToken(storedToken);
+          setUser(JSON.parse(storedUser));
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.log('Error al cargar sesión:', error);
+      } finally {
+        setLoadingAuth(false);
+      }
+    };
+    
+    loadSession();
+  }, []);
+
   const value = {
     // Estado del usuario
     user,
+    token,
     isAuthenticated,
+    loadingAuth,
     
     // Funciones de autenticación
     login,

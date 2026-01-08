@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
-import { Text, Card, Avatar, TextInput, Button, Snackbar, useTheme } from 'react-native-paper';
+import { StyleSheet, View, ScrollView, Alert } from 'react-native';
+import { Text, Card, Avatar, TextInput, Button, Snackbar, useTheme, Divider } from 'react-native-paper';
 import { useApp } from '../../context/AppContext';
 
 // Pantalla de Perfil común para todos los usuarios
 export default function PerfilScreen() {
-  const { user, updateUser } = useApp();
+  const { user, updateUser, logout } = useApp();
   const theme = useTheme();
   const [editing, setEditing] = useState(false);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   
   const [formData, setFormData] = useState({
     nombre: user?.nombre || '',
@@ -41,6 +42,33 @@ export default function PerfilScreen() {
     if (user?.role === 'productor') return '#6B9B37';
     if (user?.role === 'consumidor') return '#4A90E2';
     return '#F5A623';
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Cerrar Sesión',
+      '¿Estás seguro de que deseas cerrar sesión?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Cerrar Sesión',
+          style: 'destructive',
+          onPress: async () => {
+            setLoggingOut(true);
+            try {
+              await logout();
+            } catch (error) {
+              console.log('Error al cerrar sesión:', error);
+            } finally {
+              setLoggingOut(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -161,6 +189,27 @@ export default function PerfilScreen() {
             )}
           </Card.Content>
         </Card>
+
+        {/* Card de cerrar sesión */}
+        <Card style={styles.card} mode="elevated">
+          <Card.Content>
+            <Text variant="titleLarge" style={[styles.cardTitle, { marginBottom: 12 }]}>
+              Sesión
+            </Text>
+            <Divider style={{ marginBottom: 16 }} />
+            <Button
+              mode="contained"
+              onPress={handleLogout}
+              loading={loggingOut}
+              disabled={loggingOut}
+              icon="logout"
+              buttonColor="#c62828"
+              style={styles.logoutButton}
+            >
+              Cerrar Sesión
+            </Button>
+          </Card.Content>
+        </Card>
       </View>
 
       <Snackbar
@@ -242,5 +291,8 @@ const styles = StyleSheet.create({
   },
   value: {
     fontWeight: '400',
+  },
+  logoutButton: {
+    paddingVertical: 6,
   },
 });
