@@ -307,7 +307,163 @@ PUT /api/pedidos/{id}/estado
 
 ---
 
-## 📊 Estados de Pedido
+## � CHAT
+
+#### Listar chats del usuario
+```http
+GET /api/chats
+```
+**Response:**
+```json
+{
+  "chats": [
+    {
+      "id": 1,
+      "otro_usuario": {
+        "id": 5,
+        "nombre": "Juan García",
+        "role": "productor"
+      },
+      "ultimo_mensaje": "Hola, está disponible?",
+      "ultimo_mensaje_at": "2026-01-06 14:30"
+    }
+  ]
+}
+```
+
+#### Crear o obtener chat con otro usuario
+```http
+POST /api/chats
+```
+**Body:**
+```json
+{
+  "otro_usuario_id": 5
+}
+```
+
+#### Ver mensajes de un chat
+```http
+GET /api/chats/{chatId}/mensajes
+```
+**Response:**
+```json
+{
+  "mensajes": [
+    {
+      "id": 1,
+      "mensaje": "Hola, buenos días",
+      "user_id": 5,
+      "es_mio": false,
+      "remitente": "Juan García",
+      "leido": true,
+      "created_at": "2026-01-06 10:00"
+    }
+  ]
+}
+```
+
+#### Enviar mensaje
+```http
+POST /api/chats/{chatId}/mensajes
+```
+**Body:**
+```json
+{
+  "mensaje": "Hola, está disponible el producto?"
+}
+```
+
+---
+
+## ⭐ REVIEWS / CALIFICACIONES
+
+#### Ver reviews de un producto
+```http
+GET /api/productos/{productoId}/reviews
+```
+**Response:**
+```json
+{
+  "reviews": [
+    {
+      "id": 1,
+      "usuario": "María López",
+      "calificacion": 4.5,
+      "comentario": "Excelente producto",
+      "fecha": "2026-01-05"
+    }
+  ],
+  "promedio": 4.5,
+  "total": 10
+}
+```
+
+#### Crear o actualizar review
+```http
+POST /api/productos/{productoId}/reviews
+```
+**Body:**
+```json
+{
+  "calificacion": 5.0,
+  "comentario": "Producto de excelente calidad"
+}
+```
+
+#### Eliminar mi review
+```http
+DELETE /api/productos/{productoId}/reviews
+```
+
+---
+
+## 🔔 NOTIFICACIONES
+
+#### Listar notificaciones
+```http
+GET /api/notificaciones
+```
+**Response:**
+```json
+{
+  "notificaciones": [
+    {
+      "id": 1,
+      "tipo": "pedido",
+      "titulo": "Pedido actualizado",
+      "mensaje": "Tu pedido #123 ha sido enviado",
+      "data": {"pedido_id": 123},
+      "leido": false,
+      "fecha": "2026-01-06 10:30"
+    }
+  ]
+}
+```
+
+#### Contar notificaciones no leídas
+```http
+GET /api/notificaciones/no-leidas
+```
+
+#### Marcar como leída
+```http
+PUT /api/notificaciones/{id}/leida
+```
+
+#### Marcar todas como leídas
+```http
+PUT /api/notificaciones/marcar-todas-leidas
+```
+
+#### Eliminar notificación
+```http
+DELETE /api/notificaciones/{id}
+```
+
+---
+
+## �📊 Estados de Pedido
 
 - **pendiente**: Pedido recién creado
 - **procesando**: Productor está preparando el pedido
@@ -325,6 +481,10 @@ PUT /api/pedidos/{id}/estado
 3. **carritos** - Items en el carrito de cada usuario
 4. **pedidos** - Pedidos realizados
 5. **pedido_items** - Detalle de cada pedido
+6. **chats** - Conversaciones entre productores y consumidores
+7. **mensajes** - Mensajes de cada chat
+8. **reviews** - Calificaciones y comentarios de productos
+9. **notificaciones** - Notificaciones para usuarios
 
 ---
 
@@ -390,8 +550,9 @@ const token = data.token;
 ## 🔧 Próximos pasos sugeridos
 
 - [ ] Implementar subida de imágenes reales (storage)
-- [ ] Agregar sistema de calificaciones
-- [ ] Implementar chat entre productor-consumidor
+- [x] Sistema de calificaciones
+- [x] Implementar chat entre productor-consumidor
 - [ ] Agregar notificaciones push
 - [ ] Sistema de reportes para administrador
 - [ ] Integración con pasarelas de pago
+- [ ] WebSockets para chat en tiempo real

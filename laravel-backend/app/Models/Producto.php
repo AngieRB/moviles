@@ -49,4 +49,12 @@ class Producto extends Model
     {
         return $this->hasMany(PedidoItem::class);
     }
+
+    /**
+     * Relación con reviews
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
 }

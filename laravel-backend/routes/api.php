@@ -6,6 +6,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\PedidoController;
 use App\Http\Controllers\CarritoController;
+use App\Http\Controllers\ChatController;
+use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\NotificacionController;
 
 // ============================================
 // RUTAS PÚBLICAS (Sin autenticación)
@@ -68,4 +71,31 @@ Route::middleware('auth:sanctum')->group(function () {
     // Productores
     Route::get('/pedidos-pendientes', [PedidoController::class, 'pedidosPendientes']);
     Route::put('/pedidos/{id}/estado', [PedidoController::class, 'updateEstado']);
+
+    // ============================================
+    // CHAT
+    // ============================================
+    
+    Route::get('/chats', [ChatController::class, 'index']);
+    Route::post('/chats', [ChatController::class, 'getOrCreate']);
+    Route::get('/chats/{chatId}/mensajes', [ChatController::class, 'mensajes']);
+    Route::post('/chats/{chatId}/mensajes', [ChatController::class, 'enviarMensaje']);
+
+    // ============================================
+    // REVIEWS / CALIFICACIONES
+    // ============================================
+    
+    Route::get('/productos/{productoId}/reviews', [ReviewController::class, 'index']);
+    Route::post('/productos/{productoId}/reviews', [ReviewController::class, 'store']);
+    Route::delete('/productos/{productoId}/reviews', [ReviewController::class, 'destroy']);
+
+    // ============================================
+    // NOTIFICACIONES
+    // ============================================
+    
+    Route::get('/notificaciones', [NotificacionController::class, 'index']);
+    Route::get('/notificaciones/no-leidas', [NotificacionController::class, 'noLeidas']);
+    Route::put('/notificaciones/{id}/leida', [NotificacionController::class, 'marcarLeida']);
+    Route::put('/notificaciones/marcar-todas-leidas', [NotificacionController::class, 'marcarTodasLeidas']);
+    Route::delete('/notificaciones/{id}', [NotificacionController::class, 'destroy']);
 });

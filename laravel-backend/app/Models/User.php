@@ -75,4 +75,44 @@ class User extends Authenticatable
     {
         return $this->hasMany(Carrito::class);
     }
+
+    /**
+     * Relación con chats como productor
+     */
+    public function chatsComoProductor()
+    {
+        return $this->hasMany(Chat::class, 'productor_id');
+    }
+
+    /**
+     * Relación con chats como consumidor
+     */
+    public function chatsComoConsumidor()
+    {
+        return $this->hasMany(Chat::class, 'consumidor_id');
+    }
+
+    /**
+     * Relación con mensajes enviados
+     */
+    public function mensajes()
+    {
+        return $this->hasMany(Mensaje::class);
+    }
+
+    /**
+     * Relación con reviews
+     */
+    public function reviews()
+    {
+        return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Relación con notificaciones
+     */
+    public function notificaciones()
+    {
+        return $this->hasMany(Notificacion::class);
+    }
 }
