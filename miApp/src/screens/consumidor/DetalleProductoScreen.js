@@ -16,7 +16,7 @@ export default function DetalleProductoScreen({ route, navigation }) {
   const agregarAlCarrito = () => {
     Alert.alert(
       'Éxito',
-      `${cantidad} ${cantidad === 1 ? 'unidad' : 'unidades'} de ${producto.nombre} agregadas al carrito`,
+      `${cantidad} ${cantidad === 1 ? 'unidad' : 'unidades'} de ${producto.name} agregadas al carrito`,
       [
         {
           text: 'Continuar comprando',
@@ -56,7 +56,7 @@ export default function DetalleProductoScreen({ route, navigation }) {
 
       {/* Información del producto */}
       <View style={styles.infoSection}>
-        <Text style={styles.nombre}>{producto.nombre}</Text>
+        <Text style={styles.nombre}>{producto.name}</Text>
 
         <View style={styles.ratingRow}>
           <View style={styles.ratingContainer}>

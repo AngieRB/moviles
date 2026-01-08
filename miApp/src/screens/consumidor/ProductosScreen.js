@@ -20,7 +20,7 @@ export default function ProductosScreen({ navigation }) {
   const [productos] = useState([
     {
       id: '1',
-      nombre: 'Tomates Frescos',
+      name: 'Tomates Frescos',
       categoria: 'Vegetales',
       precio: 2.50,
       calificacion: 4.5,
@@ -30,7 +30,7 @@ export default function ProductosScreen({ navigation }) {
     },
     {
       id: '2',
-      nombre: 'Lechugas Orgánicas',
+      name: 'Lechugas Orgánicas',
       categoria: 'Vegetales',
       precio: 1.80,
       calificacion: 4.8,
@@ -40,7 +40,7 @@ export default function ProductosScreen({ navigation }) {
     },
     {
       id: '3',
-      nombre: 'Manzanas Rojas',
+      name: 'Manzanas Rojas',
       categoria: 'Frutas',
       precio: 3.20,
       calificacion: 4.6,
@@ -50,7 +50,7 @@ export default function ProductosScreen({ navigation }) {
     },
     {
       id: '4',
-      nombre: 'Zanahorias',
+      name: 'Zanahorias',
       categoria: 'Vegetales',
       precio: 1.50,
       calificacion: 4.4,
@@ -60,7 +60,7 @@ export default function ProductosScreen({ navigation }) {
     },
     {
       id: '5',
-      nombre: 'Plátanos',
+      name: 'Plátanos',
       categoria: 'Frutas',
       precio: 2.00,
       calificacion: 4.7,
@@ -73,7 +73,7 @@ export default function ProductosScreen({ navigation }) {
   const categorias = ['Todos', 'Vegetales', 'Frutas', 'Lácteos', 'Granos'];
 
   const productosFiltrados = productos.filter((producto) => {
-    const matchSearch = producto.nombre
+    const matchSearch = producto.name
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchCategory =
@@ -100,7 +100,7 @@ export default function ProductosScreen({ navigation }) {
           <Text style={styles.imagenProducto}>{item.imagen}</Text>
           <View style={styles.infoContainer}>
             <Text style={styles.nombreProducto} numberOfLines={2}>
-              {item.nombre}
+              {item.name}
             </Text>
             <Text style={styles.productor}>{item.productor}</Text>
             <View style={styles.ratingContainer}>

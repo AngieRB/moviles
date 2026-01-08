@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // IMPORTANTE: Esta es la IP de tu PC en WiFi
 // Tu teléfono debe estar conectado a la misma red WiFi
-const API_URL = "http://10.82.16.229/api";
+const API_URL = "http://10.82.16.229:8000/api";
 
 /**
  * Cliente HTTP centralizado con axios
