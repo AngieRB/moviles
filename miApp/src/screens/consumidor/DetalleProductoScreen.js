@@ -7,7 +7,7 @@ import {
   Alert,
 } from 'react-native';
 import { Card, Text, Button, Divider } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function DetalleProductoScreen({ route, navigation }) {
   const { producto } = route.params;
@@ -60,7 +60,7 @@ export default function DetalleProductoScreen({ route, navigation }) {
 
         <View style={styles.ratingRow}>
           <View style={styles.ratingContainer}>
-            <Icon name="star" size={18} color="#FFD700" />
+            <MaterialCommunityIcons name="star" size={18} color="#FFD700" />
             <Text style={styles.rating}>{producto.calificacion}</Text>
             <Text style={styles.reviews}>(120 reseñas)</Text>
           </View>
@@ -72,7 +72,7 @@ export default function DetalleProductoScreen({ route, navigation }) {
         <Divider style={styles.divider} />
 
         <View style={styles.productorContainer}>
-          <Icon name="account-circle" size={24} color="#4A90E2" />
+          <MaterialCommunityIcons name="account-circle" size={24} color="#4A90E2" />
           <View style={styles.productorInfo}>
             <Text style={styles.productorLabel}>Vendido por</Text>
             <Text style={styles.productorNombre}>{producto.productor}</Text>
@@ -95,7 +95,7 @@ export default function DetalleProductoScreen({ route, navigation }) {
             style={styles.btnCantidad}
             onPress={disminuirCantidad}
           >
-            <Icon name="minus" size={20} color="#4A90E2" />
+            <MaterialCommunityIcons name="minus" size={20} color="#4A90E2" />
           </TouchableOpacity>
           <Text style={styles.cantidadTexto}>{cantidad}</Text>
           <TouchableOpacity
@@ -145,17 +145,17 @@ export default function DetalleProductoScreen({ route, navigation }) {
         <View style={styles.caracteristicasSection}>
           <Text style={styles.caracteristicasTitulo}>Características</Text>
           <View style={styles.caracteristica}>
-            <Icon name="leaf" size={16} color="#4CAF50" />
+            <MaterialCommunityIcons name="leaf" size={16} color="#4CAF50" />
             <Text style={styles.caracteristicaTexto}>100% Orgánico</Text>
           </View>
           <View style={styles.caracteristica}>
-            <Icon name="truck-fast" size={16} color="#FF9800" />
+            <MaterialCommunityIcons name="truck-fast" size={16} color="#FF9800" />
             <Text style={styles.caracteristicaTexto}>
               Entrega en 24-48 horas
             </Text>
           </View>
           <View style={styles.caracteristica}>
-            <Icon name="shield-check" size={16} color="#2196F3" />
+            <MaterialCommunityIcons name="shield-check" size={16} color="#2196F3" />
             <Text style={styles.caracteristicaTexto}>
               Garantía de calidad
             </Text>

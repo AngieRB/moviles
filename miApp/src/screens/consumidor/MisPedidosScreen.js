@@ -7,7 +7,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { Card, Text, Chip, Divider } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function MisPedidosScreen({ navigation }) {
   const [pedidos] = useState([
@@ -126,7 +126,7 @@ export default function MisPedidosScreen({ navigation }) {
 
         <View style={styles.pedidoContent}>
           <View style={styles.productosInfo}>
-            <Icon name="package-multiple" size={20} color="#4A90E2" />
+            <MaterialCommunityIcons name="package-multiple" size={20} color="#4A90E2" />
             <View style={styles.productosTexto}>
               <Text style={styles.productosLabel}>
                 {item.items} artículos
@@ -158,7 +158,7 @@ export default function MisPedidosScreen({ navigation }) {
     <View style={styles.container}>
       {pedidos.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Icon name="package-outline" size={64} color="#ccc" />
+          <MaterialCommunityIcons name="package-outline" size={64} color="#ccc" />
           <Text style={styles.emptyTitle}>Sin pedidos</Text>
           <Text style={styles.emptyText}>Aún no has realizado pedidos</Text>
         </View>

@@ -7,7 +7,7 @@ import {
   Alert,
 } from 'react-native';
 import { Card, Text, Button, Divider } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function CarritoScreen({ navigation }) {
   const [items, setItems] = useState([
@@ -80,13 +80,13 @@ export default function CarritoScreen({ navigation }) {
             <TouchableOpacity
               onPress={() => actualizarCantidad(item.id, item.cantidad - 1)}
             >
-              <Icon name="minus-circle" size={20} color="#4A90E2" />
+              <MaterialCommunityIcons name="minus-circle" size={20} color="#4A90E2" />
             </TouchableOpacity>
             <Text style={styles.cantidadTexto}>{item.cantidad}</Text>
             <TouchableOpacity
               onPress={() => actualizarCantidad(item.id, item.cantidad + 1)}
             >
-              <Icon name="plus-circle" size={20} color="#4A90E2" />
+              <MaterialCommunityIcons name="plus-circle" size={20} color="#4A90E2" />
             </TouchableOpacity>
           </View>
 
@@ -98,7 +98,7 @@ export default function CarritoScreen({ navigation }) {
               onPress={() => eliminarItem(item.id)}
               style={styles.btnEliminar}
             >
-              <Icon name="trash-can" size={18} color="#E74C3C" />
+              <MaterialCommunityIcons name="trash-can" size={18} color="#E74C3C" />
             </TouchableOpacity>
           </View>
         </View>
@@ -110,7 +110,7 @@ export default function CarritoScreen({ navigation }) {
     <View style={styles.container}>
       {items.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <Icon name="shopping-outline" size={64} color="#ccc" />
+          <MaterialCommunityIcons name="shopping-outline" size={64} color="#ccc" />
           <Text style={styles.emptyTitle}>Carrito vacío</Text>
           <Text style={styles.emptyText}>Agrega productos para continuar</Text>
           <Button
