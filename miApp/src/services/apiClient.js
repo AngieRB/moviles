@@ -1,9 +1,9 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// IMPORTANTE: Cambia esta IP por la IP de tu servidor Laravel
-// La IP del backend según tu .env es: 10.82.23.101
-const API_URL = "http://10.82.23.101:8000/api";
+// IMPORTANTE: Esta es la IP de tu PC en WiFi
+// Tu teléfono debe estar conectado a la misma red WiFi
+const API_URL = "http://10.82.16.229/api";
 
 /**
  * Cliente HTTP centralizado con axios

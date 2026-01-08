@@ -7,7 +7,7 @@ import {
   Linking,
 } from 'react-native';
 import { Card, Text, Divider, Button } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function DetallePedidoScreen({ route, navigation }) {
   const { pedido } = route.params;
@@ -105,7 +105,7 @@ export default function DetallePedidoScreen({ route, navigation }) {
                 ]}
               >
                 {paso.completado && (
-                  <Icon name="check" size={16} color="#fff" />
+                  <MaterialCommunityIcons name="check" size={16} color="#fff" />
                 )}
               </View>
               <View style={styles.pasoTexto}>
@@ -128,7 +128,7 @@ export default function DetallePedidoScreen({ route, navigation }) {
       {/* Información del pedido */}
       <Card style={styles.infoCard}>
         <View style={styles.infoRow}>
-          <Icon name="receipt" size={20} color="#4A90E2" />
+          <MaterialCommunityIcons name="receipt" size={20} color="#4A90E2" />
           <View style={styles.infoTexto}>
             <Text style={styles.infoLabel}>Número de pedido</Text>
             <Text style={styles.infoValor}>{pedido.id}</Text>
@@ -138,7 +138,7 @@ export default function DetallePedidoScreen({ route, navigation }) {
         <Divider style={styles.divider} />
 
         <View style={styles.infoRow}>
-          <Icon name="calendar" size={20} color="#4A90E2" />
+          <MaterialCommunityIcons name="calendar" size={20} color="#4A90E2" />
           <View style={styles.infoTexto}>
             <Text style={styles.infoLabel}>Fecha del pedido</Text>
             <Text style={styles.infoValor}>
@@ -154,7 +154,7 @@ export default function DetallePedidoScreen({ route, navigation }) {
         <Divider style={styles.divider} />
 
         <View style={styles.infoRow}>
-          <Icon name="map-marker" size={20} color="#4A90E2" />
+          <MaterialCommunityIcons name="map-marker" size={20} color="#4A90E2" />
           <View style={styles.infoTexto}>
             <Text style={styles.infoLabel}>Dirección de entrega</Text>
             <Text style={styles.infoValor}>
@@ -166,7 +166,7 @@ export default function DetallePedidoScreen({ route, navigation }) {
         <Divider style={styles.divider} />
 
         <View style={styles.infoRow}>
-          <Icon name="phone" size={20} color="#4A90E2" />
+          <MaterialCommunityIcons name="phone" size={20} color="#4A90E2" />
           <View style={styles.infoTexto}>
             <Text style={styles.infoLabel}>Contacto</Text>
             <Text style={styles.infoValor}>+1 234 567 8900</Text>

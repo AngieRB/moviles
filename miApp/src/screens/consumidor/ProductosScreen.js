@@ -8,7 +8,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { Card, Text, Searchbar, Chip } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 export default function ProductosScreen({ navigation }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -104,7 +104,7 @@ export default function ProductosScreen({ navigation }) {
             </Text>
             <Text style={styles.productor}>{item.productor}</Text>
             <View style={styles.ratingContainer}>
-              <Icon name="star" size={14} color="#FFD700" />
+              <MaterialCommunityIcons name="star" size={14} color="#FFD700" />
               <Text style={styles.rating}>{item.calificacion}</Text>
               <Text style={styles.disponibles}>
                 ({item.disponibles} disponibles)
@@ -114,7 +114,7 @@ export default function ProductosScreen({ navigation }) {
           <View style={styles.precioContainer}>
             <Text style={styles.precio}>${item.precio.toFixed(2)}</Text>
             <TouchableOpacity style={styles.addButton}>
-              <Icon name="plus-circle" size={32} color="#4A90E2" />
+              <MaterialCommunityIcons name="plus-circle" size={32} color="#4A90E2" />
             </TouchableOpacity>
           </View>
         </View>
@@ -173,7 +173,7 @@ export default function ProductosScreen({ navigation }) {
           }
           ListEmptyComponent={
             <View style={styles.emptyContainer}>
-              <Icon name="magnify-close" size={48} color="#ccc" />
+              <MaterialCommunityIcons name="magnify-close" size={48} color="#ccc" />
               <Text style={styles.emptyText}>No se encontraron productos</Text>
             </View>
           }
