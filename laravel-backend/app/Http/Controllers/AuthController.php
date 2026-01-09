@@ -59,11 +59,12 @@ class AuthController extends Controller
     public function registerConsumidor(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'cedula' => 'required|string|unique:users,cedula',
-            'telefono' => 'required|string',
+            'name' => 'required|regex:/^[a-zA-Z\s]+$/',
+            'apellido' => 'required|regex:/^[a-zA-Z\s]+$/',
+            'cedula' => 'required|digits:10|unique:users,cedula',
+            'telefono' => 'required|digits:10',
             'email' => 'required|email|unique:users,email',
-            'password' => 'required|min:8|confirmed',
+            'password' => 'required|min:8|regex:/^(?=.*[a-zA-Z])(?=.*\d).+$/',
         ]);
 
         if ($validator->fails()) {
@@ -72,7 +73,7 @@ class AuthController extends Controller
 
         $user = User::create([
             'name' => $request->name,
-            'apellido' => '', // Puedes separar nombre completo si lo necesitas
+            'apellido' => $request->apellido,
             'cedula' => $request->cedula,
             'telefono' => $request->telefono,
             'email' => $request->email,
@@ -88,7 +89,9 @@ class AuthController extends Controller
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
+                'apellido' => $user->apellido,
                 'email' => $user->email,
+                'telefono' => $user->telefono,
                 'role' => $user->role,
             ],
             'token' => $token,

@@ -15,6 +15,7 @@ export default function PerfilScreen() {
     nombre: user?.nombre || '',
     apellido: user?.apellido || '',
     telefono: user?.telefono || '',
+    direccion: user?.direccion || '',
   });
 
   const handleSave = () => {
@@ -28,6 +29,7 @@ export default function PerfilScreen() {
       nombre: user?.nombre || '',
       apellido: user?.apellido || '',
       telefono: user?.telefono || '',
+      direccion: user?.direccion || '',
     });
     setEditing(false);
   };
@@ -133,6 +135,13 @@ export default function PerfilScreen() {
                   keyboardType="phone-pad"
                   style={styles.input}
                 />
+                <TextInput
+                  label="Dirección"
+                  value={formData.direccion}
+                  onChangeText={(text) => setFormData({ ...formData, direccion: text })}
+                  mode="outlined"
+                  style={styles.input}
+                />
                 
                 <View style={styles.buttonRow}>
                   <Button 
@@ -183,6 +192,14 @@ export default function PerfilScreen() {
                   </Text>
                   <Text variant="bodyMedium" style={styles.value}>
                     {user?.telefono}
+                  </Text>
+                </View>
+                <View style={styles.infoRow}>
+                  <Text variant="bodyMedium" style={styles.label}>
+                    Dirección:
+                  </Text>
+                  <Text variant="bodyMedium" style={styles.value}>
+                    {user?.direccion}
                   </Text>
                 </View>
               </View>

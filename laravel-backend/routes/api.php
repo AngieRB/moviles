@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // CRUD de productos (solo productores)
     Route::post('/productos', [ProductoController::class, 'store']);
+    Route::post('/productos/agregar', [ProductoController::class, 'addProduct']);
     Route::put('/productos/{id}', [ProductoController::class, 'update']);
     Route::delete('/productos/{id}', [ProductoController::class, 'destroy']);
 
@@ -75,7 +76,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ============================================
     // CHAT
     // ============================================
-    
+
     Route::get('/chats', [ChatController::class, 'index']);
     Route::post('/chats', [ChatController::class, 'getOrCreate']);
     Route::get('/chats/{chatId}/mensajes', [ChatController::class, 'mensajes']);
@@ -84,7 +85,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ============================================
     // REVIEWS / CALIFICACIONES
     // ============================================
-    
+
     Route::get('/productos/{productoId}/reviews', [ReviewController::class, 'index']);
     Route::post('/productos/{productoId}/reviews', [ReviewController::class, 'store']);
     Route::delete('/productos/{productoId}/reviews', [ReviewController::class, 'destroy']);
@@ -92,7 +93,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ============================================
     // NOTIFICACIONES
     // ============================================
-    
+
     Route::get('/notificaciones', [NotificacionController::class, 'index']);
     Route::get('/notificaciones/no-leidas', [NotificacionController::class, 'noLeidas']);
     Route::put('/notificaciones/{id}/leida', [NotificacionController::class, 'marcarLeida']);

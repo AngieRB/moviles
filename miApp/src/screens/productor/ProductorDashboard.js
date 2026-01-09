@@ -3,8 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { View } from 'react-native';
-import InicioScreen from '../common/InicioScreen';
-import PerfilScreen from '../common/PerfilScreen';
+import InicioScreen from './InicioScreen';
 import ConfiguracionScreen from '../common/ConfiguracionScreen';
 import PedidosPendientesScreen from './PedidosPendientesScreen';
 import AgregarProductoScreen from './AgregarProductoScreen';
@@ -94,16 +93,6 @@ export default function ProductorDashboard() {
             <Icon name="message" size={size} color={color} />
           ),
           headerTitle: 'Chat con Clientes',
-        }}
-      />
-      <Tab.Screen
-        name="Perfil"
-        component={PerfilScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Icon name="account" size={size} color={color} />
-          ),
-          headerTitle: 'Mi Perfil',
         }}
       />
       <Tab.Screen

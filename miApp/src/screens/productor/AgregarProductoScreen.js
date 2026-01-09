@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function AgregarProductoScreen() {
   const [nombre, setNombre] = useState('');
@@ -7,33 +7,46 @@ export default function AgregarProductoScreen() {
   const [precio, setPrecio] = useState('');
 
   const handleGuardar = () => {
-    console.log({ nombre, descripcion, precio });
+    if (!/^[a-zA-Z\s]+$/.test(nombre)) {
+      alert('El nombre solo puede contener letras y espacios.');
+      return;
+    }
+    if (!/^[a-zA-Z\s]+$/.test(descripcion)) {
+      alert('La descripción solo puede contener letras y espacios.');
+      return;
+    }
+    if (!/^\d+(\.\d{1,2})?$/.test(precio)) {
+      alert('El precio debe ser un número válido.');
+      return;
+    }
     alert('Producto agregado exitosamente');
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Agregar Producto</Text>
+      <Text style={styles.title}>Agregar Nuevo Producto</Text>
       <TextInput
         style={styles.input}
-        placeholder="Nombre"
+        placeholder="Nombre del Producto"
         value={nombre}
         onChangeText={setNombre}
       />
       <TextInput
         style={styles.input}
-        placeholder="Descripción"
+        placeholder="Descripción Detallada"
         value={descripcion}
         onChangeText={setDescripcion}
       />
       <TextInput
         style={styles.input}
-        placeholder="Precio"
+        placeholder="Precio por Unidad ($)"
         value={precio}
         onChangeText={setPrecio}
         keyboardType="numeric"
       />
-      <Button title="Guardar" onPress={handleGuardar} color="#6B9B37" />
+      <TouchableOpacity style={styles.button} onPress={handleGuardar}>
+        <Text style={styles.buttonText}>GUARDAR PRODUCTO</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -42,20 +55,33 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#f5f5f5',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#6B9B37',
+    color: '#4CAF50',
     marginBottom: 20,
   },
   input: {
+    height: 50,
+    borderColor: '#ccc',
     borderWidth: 1,
-    borderColor: '#6B9B37',
-    borderRadius: 5,
-    padding: 10,
+    borderRadius: 10,
+    paddingHorizontal: 10,
     marginBottom: 15,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#ffffff',
+  },
+  button: {
+    height: 50,
+    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 10,
+  },
+  buttonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#ffffff',
   },
 });

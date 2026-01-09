@@ -17,6 +17,9 @@ import AdministradorDashboard from '../screens/administrador/AdministradorDashbo
 
 // Pantallas adicionales
 import ConfiguracionScreen from '../screens/common/ConfiguracionScreen';
+import ProducerHomeScreen from '../screens/ProducerHomeScreen';
+import AddProductScreen from '../screens/AddProductScreen';
+import ProducerProfileScreen from '../screens/ProducerProfileScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -64,11 +67,28 @@ export default function AppNavigator() {
           // Stack de dashboards según el rol
           <>
             {user?.role === 'productor' && (
-              <Stack.Screen 
-                name="ProductorDashboard" 
-                component={ProductorDashboard}
-                options={{ title: 'Dashboard Productor' }}
-              />
+              <>
+                <Stack.Screen 
+                  name="ProductorDashboard" 
+                  component={ProductorDashboard}
+                  options={{ title: 'Dashboard Productor' }}
+                />
+                <Stack.Screen 
+                  name="ProducerHome" 
+                  component={ProducerHomeScreen} 
+                  options={{ title: 'Inicio Productor' }} 
+                />
+                <Stack.Screen 
+                  name="AddProduct" 
+                  component={AddProductScreen} 
+                  options={{ title: 'Agregar Producto' }} 
+                />
+                <Stack.Screen 
+                  name="ProducerProfile" 
+                  component={ProducerProfileScreen} 
+                  options={{ title: 'Perfil Productor' }} 
+                />
+              </>
             )}
             {user?.role === 'consumidor' && (
               <Stack.Screen 
