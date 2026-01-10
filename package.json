@@ -1,5 +1,9 @@
 {
   "dependencies": {
-    "expo": "^54.0.31"
+    "expo": "^54.0.31",
+    "react-dom": "19.1.0",
+    "react-icons": "^5.5.0",
+    "react-native-vector-icons": "^10.3.0",
+    "react-native-web": "^0.21.0"
   }
 }

@@ -2,10 +2,18 @@ import React from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 
 const InicioScreen = () => {
+  const userProfile = {
+    name: 'Juan Pérez',
+    email: 'consumidor@test.com',
+    role: 'Consumidor',
+  };
+
   const products = [
-    { id: '1', name: 'Tomate Riñón', category: 'Verduras', price: '$1.50/kg', stock: '500 kg', status: 'Alto' },
-    { id: '2', name: 'Papas Superchola', category: 'Tubérculos', price: '$0.80/kg', stock: '1200 kg', status: 'Alto' },
-    { id: '3', name: 'Cebolla Paiteña', category: 'Verduras', price: '$1.00/kg', stock: '50 kg', status: 'Bajo' },
+    { id: '1', name: 'Tomate Riñón', category: 'Verduras', price: '$1.50/kg', stock: '120 kg', status: 'Alto', statusColor: 'green' },
+    { id: '2', name: 'Papas Superchola', category: 'Tubérculos', price: '$0.80/kg', stock: '500 kg', status: 'Alto', statusColor: 'green' },
+    { id: '3', name: 'Lechuga Crespa', category: 'Verduras', price: '$0.50/unidad', stock: '25 unidades', status: 'Bajo', statusColor: 'red' },
+    { id: '4', name: 'Manzana Roja', category: 'Frutas', price: '$2.00/kg', stock: '80 kg', status: 'Medio', statusColor: 'yellow' },
+    { id: '5', name: 'Cebolla Paiteña', category: 'Verduras', price: '$1.00/kg', stock: '150 kg', status: 'Alto', statusColor: 'green' },
   ];
 
   const renderProduct = ({ item }) => (
@@ -14,18 +22,16 @@ const InicioScreen = () => {
       <Text style={styles.productCategory}>{item.category}</Text>
       <Text style={styles.productPrice}>{item.price}</Text>
       <Text style={styles.productStock}>{item.stock}</Text>
-      <Text style={[styles.productStatus, item.status === 'Alto' ? styles.statusHigh : styles.statusLow]}>
-        {item.status}
-      </Text>
+      <Text style={[styles.productStatus, { color: item.statusColor }]}>{item.status}</Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>¡Buenas tardes, Productor!</Text>
+      <Text style={styles.header}>¡Buenas tardes, {userProfile.name}!</Text>
       <Text style={styles.subHeader}>Bienvenido a AgroConnect</Text>
 
-      <Text style={styles.sectionTitle}>Mis Productos y Stock</Text>
+      <Text style={styles.sectionTitle}>Stock de Productos Disponibles</Text>
       <FlatList
         data={products}
         renderItem={renderProduct}
@@ -94,12 +100,6 @@ const styles = StyleSheet.create({
   productStatus: {
     fontSize: 14,
     fontWeight: 'bold',
-  },
-  statusHigh: {
-    color: '#4CAF50',
-  },
-  statusLow: {
-    color: '#F44336',
   },
 });
 

@@ -1,245 +1,108 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, Alert } from 'react-native';
-import { Text, Card, Avatar, TextInput, Button, Snackbar, useTheme, Divider } from 'react-native-paper';
+import { StyleSheet, View, ScrollView } from 'react-native';
+import { Text, Card, Avatar, TextInput, Button, IconButton, HelperText } from 'react-native-paper';
 import { useApp } from '../../context/AppContext';
 
 // Pantalla de Perfil común para todos los usuarios
 export default function PerfilScreen() {
-  const { user, updateUser, logout } = useApp();
-  const theme = useTheme();
+  const { user, updateUser } = useApp();
   const [editing, setEditing] = useState(false);
-  const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [loggingOut, setLoggingOut] = useState(false);
-  
   const [formData, setFormData] = useState({
-    nombre: user?.nombre || '',
-    apellido: user?.apellido || '',
-    telefono: user?.telefono || '',
-    direccion: user?.direccion || '',
+    email: user?.email || 'productor@test.com',
+    telefono: user?.telefono || '0987654321',
   });
+  const [errors, setErrors] = useState({});
+
+  const fincaData = {
+    ubicacion: 'Km 15 Vía Portoviejo',
+    area: '10.5 Hectáreas',
+    experiencia: '15 años',
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.telefono.trim() || !/^[0-9]{10}$/.test(formData.telefono)) {
+      newErrors.telefono = 'El teléfono debe tener 10 dígitos numéricos';
+    }
+    if (!formData.email.trim() || !/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Correo inválido';
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSave = () => {
+    if (!validateForm()) return;
     updateUser(formData);
     setEditing(false);
-    setSnackbarVisible(true);
-  };
-
-  const handleCancel = () => {
-    setFormData({
-      nombre: user?.nombre || '',
-      apellido: user?.apellido || '',
-      telefono: user?.telefono || '',
-      direccion: user?.direccion || '',
-    });
-    setEditing(false);
-  };
-
-  const getRoleIcon = () => {
-    if (user?.role === 'productor') return 'leaf';
-    if (user?.role === 'consumidor') return 'cart';
-    return 'cog';
-  };
-
-  const getRoleColor = () => {
-    if (user?.role === 'productor') return '#6B9B37';
-    if (user?.role === 'consumidor') return '#4A90E2';
-    return '#F5A623';
-  };
-
-  const handleLogout = () => {
-    Alert.alert(
-      'Cerrar Sesión',
-      '¿Estás seguro de que deseas cerrar sesión?',
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Cerrar Sesión',
-          style: 'destructive',
-          onPress: async () => {
-            setLoggingOut(true);
-            try {
-              await logout();
-            } catch (error) {
-              console.log('Error al cerrar sesión:', error);
-            } finally {
-              setLoggingOut(false);
-            }
-          },
-        },
-      ]
-    );
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: theme.colors.background }]}>
-      <View style={styles.content}>
-        {/* Avatar y nombre */}
-        <Card style={styles.headerCard} mode="elevated">
-          <Card.Content style={styles.headerContent}>
-            <Avatar.Icon 
-              size={100} 
-              icon={getRoleIcon()}
-              style={[styles.avatar, { backgroundColor: getRoleColor() }]}
-            />
-            <Text variant="headlineMedium" style={styles.userName}>
-              {user?.nombre} {user?.apellido}
-            </Text>
-            <Text variant="bodyMedium" style={styles.userEmail}>
-              {user?.email}
-            </Text>
+    <ScrollView style={styles.container}>
+      <Card style={styles.headerCard}>
+        <Card.Content style={styles.headerContent}>
+          <Avatar.Icon size={100} icon="leaf" style={styles.avatar} />
+          <Text style={styles.userName}>{user?.nombre || 'Juan Pérez'}</Text>
+          <Text style={styles.userRole}>Productor Verificado</Text>
+          <Text style={styles.userFinca}>Finca El Paraíso - Manabí</Text>
+        </Card.Content>
+      </Card>
+
+      <View style={styles.sectionContainer}>
+        <Card style={styles.card}>
+          <Card.Content>
+            <Text style={styles.sectionTitle}>Resumen de la Finca</Text>
+            <Text style={styles.infoText}>Ubicación: {fincaData.ubicacion}</Text>
+            <Text style={styles.infoText}>Área: {fincaData.area}</Text>
+            <Text style={styles.infoText}>Experiencia: {fincaData.experiencia}</Text>
           </Card.Content>
         </Card>
 
-        {/* Información del perfil */}
-        <Card style={styles.card} mode="elevated">
+        <Card style={styles.card}>
           <Card.Content>
-            <View style={styles.cardHeader}>
-              <Text variant="titleLarge" style={styles.cardTitle}>
-                Información Personal
-              </Text>
-              {!editing && (
-                <Button 
-                  mode="text" 
-                  onPress={() => setEditing(true)}
-                  icon="pencil"
-                >
-                  Editar
-                </Button>
-              )}
-            </View>
-
+            <Text style={styles.sectionTitle}>Información de Contacto</Text>
             {editing ? (
-              <View style={styles.form}>
+              <View>
                 <TextInput
-                  label="Nombre"
-                  value={formData.nombre}
-                  onChangeText={(text) => setFormData({ ...formData, nombre: text })}
+                  label="Email"
+                  value={formData.email}
+                  onChangeText={(text) => setFormData({ ...formData, email: text })}
                   mode="outlined"
                   style={styles.input}
+                  error={!!errors.email}
                 />
-                <TextInput
-                  label="Apellido"
-                  value={formData.apellido}
-                  onChangeText={(text) => setFormData({ ...formData, apellido: text })}
-                  mode="outlined"
-                  style={styles.input}
-                />
+                {errors.email && <HelperText type="error">{errors.email}</HelperText>}
+
                 <TextInput
                   label="Teléfono"
                   value={formData.telefono}
-                  onChangeText={(text) => setFormData({ ...formData, telefono: text })}
+                  onChangeText={(text) => setFormData({ ...formData, telefono: text.replace(/[^0-9]/g, '').slice(0, 10) })}
                   mode="outlined"
+                  style={styles.input}
                   keyboardType="phone-pad"
-                  style={styles.input}
+                  error={!!errors.telefono}
                 />
-                <TextInput
-                  label="Dirección"
-                  value={formData.direccion}
-                  onChangeText={(text) => setFormData({ ...formData, direccion: text })}
-                  mode="outlined"
-                  style={styles.input}
-                />
-                
-                <View style={styles.buttonRow}>
-                  <Button 
-                    mode="outlined" 
-                    onPress={handleCancel}
-                    style={styles.button}
-                  >
-                    Cancelar
-                  </Button>
-                  <Button 
-                    mode="contained" 
-                    onPress={handleSave}
-                    style={styles.button}
-                  >
-                    Guardar
-                  </Button>
-                </View>
+                {errors.telefono && <HelperText type="error">{errors.telefono}</HelperText>}
+
+                <Button mode="contained" onPress={handleSave} style={styles.saveButton}>
+                  Guardar
+                </Button>
               </View>
             ) : (
               <View>
-                <View style={styles.infoRow}>
-                  <Text variant="bodyMedium" style={styles.label}>
-                    Nombre:
-                  </Text>
-                  <Text variant="bodyMedium" style={styles.value}>
-                    {user?.nombre}
-                  </Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text variant="bodyMedium" style={styles.label}>
-                    Apellido:
-                  </Text>
-                  <Text variant="bodyMedium" style={styles.value}>
-                    {user?.apellido}
-                  </Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text variant="bodyMedium" style={styles.label}>
-                    Email:
-                  </Text>
-                  <Text variant="bodyMedium" style={styles.value}>
-                    {user?.email}
-                  </Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text variant="bodyMedium" style={styles.label}>
-                    Teléfono:
-                  </Text>
-                  <Text variant="bodyMedium" style={styles.value}>
-                    {user?.telefono}
-                  </Text>
-                </View>
-                <View style={styles.infoRow}>
-                  <Text variant="bodyMedium" style={styles.label}>
-                    Dirección:
-                  </Text>
-                  <Text variant="bodyMedium" style={styles.value}>
-                    {user?.direccion}
-                  </Text>
-                </View>
+                <Text style={styles.infoText}>Email: {formData.email}</Text>
+                <Text style={styles.infoText}>Teléfono: {formData.telefono}</Text>
+                <IconButton
+                  icon="pencil"
+                  size={20}
+                  onPress={() => setEditing(true)}
+                  style={styles.editIcon}
+                />
               </View>
             )}
           </Card.Content>
         </Card>
-
-        {/* Card de cerrar sesión */}
-        <Card style={styles.card} mode="elevated">
-          <Card.Content>
-            <Text variant="titleLarge" style={[styles.cardTitle, { marginBottom: 12 }]}>
-              Sesión
-            </Text>
-            <Divider style={{ marginBottom: 16 }} />
-            <Button
-              mode="contained"
-              onPress={handleLogout}
-              loading={loggingOut}
-              disabled={loggingOut}
-              icon="logout"
-              buttonColor="#c62828"
-              style={styles.logoutButton}
-            >
-              Cerrar Sesión
-            </Button>
-          </Card.Content>
-        </Card>
       </View>
-
-      <Snackbar
-        visible={snackbarVisible}
-        onDismiss={() => setSnackbarVisible(false)}
-        duration={3000}
-        action={{
-          label: 'OK',
-          onPress: () => setSnackbarVisible(false),
-        }}
-      >
-        ✅ Perfil actualizado correctamente
-      </Snackbar>
     </ScrollView>
   );
 }
@@ -247,69 +110,53 @@ export default function PerfilScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  content: {
-    padding: 16,
+    padding: 20,
+    backgroundColor: '#f5f5f5',
   },
   headerCard: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   headerContent: {
     alignItems: 'center',
-    paddingVertical: 20,
   },
   avatar: {
-    marginBottom: 16,
+    backgroundColor: '#6B9B37',
   },
   userName: {
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 4,
+    marginTop: 10,
   },
-  userEmail: {
-    opacity: 0.7,
+  userRole: {
+    fontSize: 16,
+    color: '#6B9B37',
+  },
+  userFinca: {
+    fontSize: 14,
+    color: '#757575',
+  },
+  sectionContainer: {
+    marginBottom: 20,
   },
   card: {
-    marginBottom: 16,
+    marginBottom: 10,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  cardTitle: {
+  sectionTitle: {
+    fontSize: 18,
     fontWeight: 'bold',
+    marginBottom: 10,
   },
-  form: {
-    marginTop: 8,
+  infoText: {
+    fontSize: 14,
+    marginBottom: 5,
   },
   input: {
-    marginBottom: 12,
+    marginBottom: 10,
   },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
+  saveButton: {
+    marginTop: 10,
   },
-  button: {
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(0,0,0,0.1)',
-  },
-  label: {
-    fontWeight: '600',
-    opacity: 0.7,
-  },
-  value: {
-    fontWeight: '400',
-  },
-  logoutButton: {
-    paddingVertical: 6,
+  editIcon: {
+    alignSelf: 'flex-end',
   },
 });
