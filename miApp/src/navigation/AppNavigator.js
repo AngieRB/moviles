@@ -29,6 +29,7 @@ export default function AppNavigator() {
   return (
     <NavigationContainer>
       <Stack.Navigator
+        initialRouteName="Welcome"
         screenOptions={{
           headerShown: false,
           animation: 'slide_from_right',
@@ -128,5 +129,18 @@ export function handleNavigationReset(navigation, isAuthenticated, user) {
       index: 0,
       routes: [{ name: `${user.role}Dashboard` }],
     });
+  }
+}
+
+// Manejo de errores para la acción RESET
+export function handleResetAction(navigation) {
+  try {
+    navigation.reset({
+      index: 0,
+      routes: [{ name: 'Welcome' }],
+    });
+  } catch (error) {
+    console.error('Error al manejar la acción RESET:', error);
+    navigation.navigate('Welcome'); // Acción alternativa
   }
 }
