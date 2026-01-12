@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Chat;
 use App\Models\Mensaje;
+use App\Events\NuevoMensajeEvent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -32,7 +33,7 @@ class ChatController extends Controller
                     'id' => $chat->id,
                     'otro_usuario' => [
                         'id' => $otroUsuario->id,
-                        'nombre' => $otroUsuario->nombre . ' ' . $otroUsuario->apellido,
+                        'nombre' => $otroUsuario->name . ' ' . $otroUsuario->apellido,
                         'role' => $otroUsuario->role,
                     ],
                     'ultimo_mensaje' => $chat->ultimo_mensaje,
@@ -104,7 +105,7 @@ class ChatController extends Controller
 
         // Obtener mensajes
         $mensajes = Mensaje::where('chat_id', $chatId)
-            ->with('user:id,nombre,apellido')
+            ->with('user:id,name,apellido')
             ->orderBy('created_at', 'asc')
             ->get()
             ->map(function ($mensaje) use ($user) {
@@ -113,7 +114,7 @@ class ChatController extends Controller
                     'mensaje' => $mensaje->mensaje,
                     'user_id' => $mensaje->user_id,
                     'es_mio' => $mensaje->user_id === $user->id,
-                    'remitente' => $mensaje->user->nombre . ' ' . $mensaje->user->apellido,
+                    'remitente' => $mensaje->user->name . ' ' . $mensaje->user->apellido,
                     'leido' => $mensaje->leido,
                     'created_at' => $mensaje->created_at->format('Y-m-d H:i'),
                 ];
@@ -168,13 +169,67 @@ class ChatController extends Controller
             'ultimo_mensaje_at' => now(),
         ]);
 
+        // Disparar evento de Pusher para notificar en tiempo real
+        broadcast(new NuevoMensajeEvent($chat, $mensaje, $user))->toOthers();
+
         return response()->json([
             'message' => 'Mensaje enviado',
             'mensaje' => [
                 'id' => $mensaje->id,
                 'mensaje' => $mensaje->mensaje,
+                'user_id' => $user->id,
                 'created_at' => $mensaje->created_at->format('Y-m-d H:i'),
             ],
         ], 201);
+    }
+
+    /**
+     * Marcar todos los mensajes de un chat como leídos
+     */
+    public function marcarLeidos(Request $request, $chatId)
+    {
+        $chat = Chat::find($chatId);
+
+        if (!$chat) {
+            return response()->json(['message' => 'Chat no encontrado'], 404);
+        }
+
+        $user = $request->user();
+        if ($chat->productor_id !== $user->id && $chat->consumidor_id !== $user->id) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        // Marcar como leídos todos los mensajes que NO fueron enviados por mí
+        Mensaje::where('chat_id', $chatId)
+            ->where('user_id', '!=', $user->id)
+            ->where('leido', false)
+            ->update(['leido' => true]);
+
+        return response()->json([
+            'message' => 'Mensajes marcados como leídos',
+        ], 200);
+    }
+
+    /**
+     * Obtener conteo de mensajes no leídos
+     */
+    public function mensajesNoLeidos(Request $request)
+    {
+        $user = $request->user();
+
+        // Obtener todos los chats del usuario
+        $chatIds = Chat::where('productor_id', $user->id)
+            ->orWhere('consumidor_id', $user->id)
+            ->pluck('id');
+
+        // Contar mensajes no leídos que no fueron enviados por mí
+        $count = Mensaje::whereIn('chat_id', $chatIds)
+            ->where('user_id', '!=', $user->id)
+            ->where('leido', false)
+            ->count();
+
+        return response()->json([
+            'no_leidos' => $count,
+        ], 200);
     }
 }

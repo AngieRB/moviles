@@ -9,6 +9,7 @@ use App\Http\Controllers\CarritoController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\NotificacionController;
+use App\Http\Controllers\StripeController;
 
 // ============================================
 // RUTAS PÚBLICAS (Sin autenticación)
@@ -36,6 +37,9 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
+    
+    // Listar usuarios por rol
+    Route::get('/usuarios', [AuthController::class, 'listarUsuarios']);
 
     // ============================================
     // PRODUCTOS
@@ -68,9 +72,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/mis-pedidos', [PedidoController::class, 'misPedidos']);
     Route::get('/pedidos/{id}', [PedidoController::class, 'show']);
     Route::post('/pedidos', [PedidoController::class, 'store']);
+    Route::put('/pedidos/{id}/confirmar-recepcion', [PedidoController::class, 'confirmarRecepcion']);
 
     // Productores
     Route::get('/pedidos-pendientes', [PedidoController::class, 'pedidosPendientes']);
+    Route::get('/mis-pedidos-productor', [PedidoController::class, 'misPedidosProductor']);
     Route::put('/pedidos/{id}/estado', [PedidoController::class, 'updateEstado']);
 
     // ============================================
@@ -81,6 +87,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/chats', [ChatController::class, 'getOrCreate']);
     Route::get('/chats/{chatId}/mensajes', [ChatController::class, 'mensajes']);
     Route::post('/chats/{chatId}/mensajes', [ChatController::class, 'enviarMensaje']);
+    Route::put('/chats/{chatId}/marcar-leidos', [ChatController::class, 'marcarLeidos']);
+    Route::get('/chats/no-leidos', [ChatController::class, 'mensajesNoLeidos']);
 
     // ============================================
     // REVIEWS / CALIFICACIONES
@@ -99,4 +107,31 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/notificaciones/{id}/leida', [NotificacionController::class, 'marcarLeida']);
     Route::put('/notificaciones/marcar-todas-leidas', [NotificacionController::class, 'marcarTodasLeidas']);
     Route::delete('/notificaciones/{id}', [NotificacionController::class, 'destroy']);
+
+    // ============================================
+    // PAGOS CON STRIPE
+    // ============================================
+
+    Route::post('/stripe/create-payment-intent', [StripeController::class, 'createPaymentIntent']);
+    Route::post('/stripe/confirm-payment', [StripeController::class, 'confirmPayment']);
+
+    // ============================================
+    // ADMIN - Estadísticas y gestión
+    // ============================================
+
+    Route::get('/admin/estadisticas', [PedidoController::class, 'estadisticasAdmin']);
+    Route::get('/admin/pedidos', [PedidoController::class, 'todosPedidos']);
+    
+    // Gestión de usuarios (solo admin)
+    Route::put('/usuarios/{id}/verificar', [AuthController::class, 'verificarUsuario']);
+    Route::put('/usuarios/{id}/rechazar', [AuthController::class, 'rechazarUsuario']);
+    Route::delete('/usuarios/{id}', [AuthController::class, 'eliminarUsuario']);
+});
+
+// ============================================
+// RUTA DE PRUEBA WEBSOCKET
+// ============================================
+Route::get('/test-websocket', function() {
+    event(new \App\Events\PruebaEvent('¡Hola desde el servidor! ' . now()));
+    return response()->json(['mensaje' => 'Evento enviado correctamente']);
 });

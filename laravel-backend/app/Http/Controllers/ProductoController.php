@@ -13,7 +13,7 @@ class ProductoController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Producto::with('productor:id,nombre,apellido')->where('disponibles', '>', 0);
+        $query = Producto::with('productor:id,name,apellido')->where('disponibles', '>', 0);
 
         // Filtrar por búsqueda
         if ($request->has('search')) {
@@ -34,7 +34,7 @@ class ProductoController extends Controller
                 'calificacion' => $producto->calificacion,
                 'imagen' => $producto->imagen,
                 'disponibles' => $producto->disponibles,
-                'productor' => $producto->productor->nombre . ' ' . $producto->productor->apellido,
+                'productor' => $producto->productor->name . ' ' . $producto->productor->apellido,
                 'descripcion' => $producto->descripcion,
             ];
         });
@@ -49,7 +49,7 @@ class ProductoController extends Controller
      */
     public function show($id)
     {
-        $producto = Producto::with('productor:id,nombre,apellido,telefono')->find($id);
+        $producto = Producto::with('productor:id,name,apellido,telefono')->find($id);
 
         if (!$producto) {
             return response()->json(['message' => 'Producto no encontrado'], 404);
@@ -67,7 +67,7 @@ class ProductoController extends Controller
                 'descripcion' => $producto->descripcion,
                 'productor' => [
                     'id' => $producto->productor->id,
-                    'nombre' => $producto->productor->nombre . ' ' . $producto->productor->apellido,
+                    'nombre' => $producto->productor->name . ' ' . $producto->productor->apellido,
                     'telefono' => $producto->productor->telefono,
                 ],
             ],
@@ -91,8 +91,14 @@ class ProductoController extends Controller
      */
     public function store(Request $request)
     {
+        // Log para debugging
+        \Log::info('=== CREAR PRODUCTO ===');
+        \Log::info('Usuario:', ['id' => $request->user()->id, 'role' => $request->user()->role]);
+        \Log::info('Datos recibidos:', $request->all());
+        
         // Verificar que el usuario es productor
         if ($request->user()->role !== 'productor') {
+            \Log::error('Usuario no es productor');
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
@@ -102,28 +108,36 @@ class ProductoController extends Controller
             'precio' => 'required|numeric|min:0',
             'disponibles' => 'required|integer|min:0',
             'descripcion' => 'nullable|string',
-            'imagen' => 'nullable|string', // URL o base64
+            'imagen' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
+            \Log::error('Validación fallida:', $validator->errors()->toArray());
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $producto = Producto::create([
-            'nombre' => $request->nombre,
-            'categoria' => $request->categoria,
-            'precio' => $request->precio,
-            'disponibles' => $request->disponibles,
-            'descripcion' => $request->descripcion,
-            'imagen' => $request->imagen ?? '📦',
-            'calificacion' => 0,
-            'user_id' => $request->user()->id,
-        ]);
+        try {
+            $producto = Producto::create([
+                'nombre' => $request->nombre,
+                'categoria' => $request->categoria,
+                'precio' => $request->precio,
+                'disponibles' => $request->disponibles,
+                'descripcion' => $request->descripcion ?? '',
+                'imagen' => $request->imagen ?? '📦',
+                'calificacion' => 0,
+                'user_id' => $request->user()->id,
+            ]);
+            
+            \Log::info('Producto creado exitosamente:', ['id' => $producto->id]);
 
-        return response()->json([
-            'message' => 'Producto creado exitosamente',
-            'producto' => $producto,
-        ], 201);
+            return response()->json([
+                'message' => 'Producto creado exitosamente',
+                'producto' => $producto,
+            ], 201);
+        } catch (\Exception $e) {
+            \Log::error('Error al crear producto:', ['error' => $e->getMessage()]);
+            return response()->json(['message' => 'Error al crear producto: ' . $e->getMessage()], 500);
+        }
     }
 
     /**

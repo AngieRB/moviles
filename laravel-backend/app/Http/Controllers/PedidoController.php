@@ -210,6 +210,40 @@ class PedidoController extends Controller
     }
 
     /**
+     * Listar TODOS los pedidos del productor (para estadísticas)
+     */
+    public function misPedidosProductor(Request $request)
+    {
+        // Verificar que el usuario es productor
+        if ($request->user()->role !== 'productor') {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        // Obtener pedidos que contienen productos del productor
+        $pedidos = Pedido::with(['items.producto', 'user'])
+            ->whereHas('items.producto', function ($query) use ($request) {
+                $query->where('user_id', $request->user()->id);
+            })
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($pedido) use ($request) {
+                return [
+                    'id' => $pedido->id,
+                    'cliente' => $pedido->user ? ($pedido->user->name . ' ' . $pedido->user->apellido) : 'N/A',
+                    'cliente_id' => $pedido->user_id,
+                    'fecha' => $pedido->created_at->format('Y-m-d H:i'),
+                    'estado' => $pedido->estado,
+                    'total' => $pedido->total,
+                    'items_count' => $pedido->items->count(),
+                ];
+            });
+
+        return response()->json([
+            'pedidos' => $pedidos,
+        ], 200);
+    }
+
+    /**
      * Actualizar estado de pedido
      */
     public function updateEstado(Request $request, $id)
@@ -233,6 +267,86 @@ class PedidoController extends Controller
 
         return response()->json([
             'message' => 'Estado del pedido actualizado',
+            'pedido' => [
+                'id' => $pedido->id,
+                'estado' => $pedido->estado,
+            ],
+        ], 200);
+    }
+
+    /**
+     * Obtener todos los pedidos (para admin)
+     */
+    public function todosPedidos(Request $request)
+    {
+        $pedidos = Pedido::with(['user', 'items.producto'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($pedido) {
+                return [
+                    'id' => $pedido->id,
+                    'estado' => $pedido->estado,
+                    'total' => $pedido->total,
+                    'fecha' => $pedido->created_at->format('Y-m-d H:i'),
+                    'cliente' => $pedido->user ? $pedido->user->name . ' ' . $pedido->user->apellido : 'N/A',
+                    'items_count' => $pedido->items->count(),
+                ];
+            });
+
+        return response()->json([
+            'pedidos' => $pedidos,
+        ], 200);
+    }
+
+    /**
+     * Obtener estadísticas para admin
+     */
+    public function estadisticasAdmin(Request $request)
+    {
+        $totalPedidos = Pedido::count();
+        $pedidosPendientes = Pedido::whereIn('estado', ['pendiente', 'procesando'])->count();
+        $pedidosCompletados = Pedido::where('estado', 'entregado')->count();
+        $ventasTotales = Pedido::sum('total');
+
+        return response()->json([
+            'estadisticas' => [
+                'totalPedidos' => $totalPedidos,
+                'pedidosPendientes' => $pedidosPendientes,
+                'pedidosCompletados' => $pedidosCompletados,
+                'ventasTotales' => floatval($ventasTotales),
+            ],
+        ], 200);
+    }
+
+    /**
+     * Consumidor confirma la recepción del pedido
+     */
+    public function confirmarRecepcion(Request $request, $id)
+    {
+        $pedido = Pedido::find($id);
+
+        if (!$pedido) {
+            return response()->json(['message' => 'Pedido no encontrado'], 404);
+        }
+
+        // Verificar que el pedido pertenece al consumidor
+        if ($pedido->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        // Solo se puede confirmar si el pedido está en estado "enviado"
+        if (!in_array($pedido->estado, ['enviado', 'procesando'])) {
+            return response()->json([
+                'message' => 'El pedido no puede ser confirmado en su estado actual: ' . $pedido->estado
+            ], 400);
+        }
+
+        $pedido->estado = 'entregado';
+        $pedido->fecha_entrega = now();
+        $pedido->save();
+
+        return response()->json([
+            'message' => 'Pedido confirmado como entregado',
             'pedido' => [
                 'id' => $pedido->id,
                 'estado' => $pedido->estado,

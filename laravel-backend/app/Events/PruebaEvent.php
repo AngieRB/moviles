@@ -23,7 +23,13 @@ class PruebaEvent implements ShouldBroadcast
 
     public function broadcastOn()
     {
-        // 3. IMPORTANTE: Nombre del canal público (como una estación de radio)
+        // Canal público que coincide con el frontend
+        return new Channel('canal-agro');
+    }
+
+    public function broadcastAs()
+    {
+        // Nombre del evento que coincide con el frontend
         return 'evento-prueba';
     }
 }
