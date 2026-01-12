@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView } from 'react-native';
-import { Text, Card, Switch, List, Button, Divider, Snackbar, useTheme, FAB } from 'react-native-paper'; // <--- 1. Agregamos FAB aquí
+import { Text, Card, Switch, List, Button, Divider, Snackbar, useTheme, FAB } from 'react-native-paper';
 import { useApp } from '../../context/AppContext';
 
 export default function ConfiguracionScreen({ navigation }) {
@@ -19,17 +19,14 @@ export default function ConfiguracionScreen({ navigation }) {
     setSnackbarVisible(true);
   };
 
+  // --- CORRECCIÓN AQUÍ ---
   const handleLogout = () => {
-    logout();
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Welcome' }],
-    });
+    // Solo llamamos a logout. El AppNavigator hará el resto automáticamente.
+    logout(); 
   };
+  // -----------------------
 
   return (
-    // 2. Cambiamos el contenedor principal a una View normal con flex: 1
-    // para poder usar posicionamiento absoluto dentro de ella.
     <View style={[styles.mainContainer, { backgroundColor: theme.colors.background }]}>
       
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -143,7 +140,6 @@ export default function ConfiguracionScreen({ navigation }) {
         </View>
       </ScrollView>
 
-      {/* 3. AQUI ESTÁ EL BOTÓN DE FLECHA FLOTANTE CORREGIDO */}
       <FAB
         icon="arrow-left"
         label=""
@@ -156,7 +152,7 @@ export default function ConfiguracionScreen({ navigation }) {
            left: 0,
            bottom: 0,
            backgroundColor: isDarkMode ? '#fff' : '#554747ff',
-           zIndex: 100 // Esto asegura que el botón flote sobre todo lo demás
+           zIndex: 100 
         }}
       />
 
@@ -173,10 +169,10 @@ export default function ConfiguracionScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   mainContainer: {
-    flex: 1, // Ocupa toda la pantalla
+    flex: 1,
   },
   scrollContent: {
-    paddingBottom: 80, // Espacio extra abajo para que el botón no tape contenido
+    paddingBottom: 80,
   },
   content: {
     padding: 16,

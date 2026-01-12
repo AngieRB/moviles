@@ -51,17 +51,15 @@ export default function ChatProductoresScreen({ navigation }) {
         const response = await apiClient.get(`/chats/${selectedChat.id}/mensajes`);
         const nuevosMensajes = response.data.mensajes || [];
         
-        // Solo actualizar si hay cambios
-        if (nuevosMensajes.length !== mensajes.length) {
-          setMensajes(nuevosMensajes);
-        }
+        // Actualizar mensajes
+        setMensajes(nuevosMensajes);
       } catch (error) {
         console.error('Error al actualizar mensajes:', error);
       }
-    }, 3000); // Cada 3 segundos
+    }, 5000); // Cada 5 segundos
     
     return () => clearInterval(interval);
-  }, [selectedChat, mensajes.length]);
+  }, [selectedChat]);
 
   // Cargar mensajes cuando se selecciona un chat
   useEffect(() => {

@@ -109,7 +109,7 @@ export default function MisPedidosScreen({ navigation }) {
 
         <View style={styles.pedidoContent}>
           <View style={styles.productosInfo}>
-            <MaterialCommunityIcons name="package-multiple" size={20} color="#4A90E2" />
+            <MaterialCommunityIcons name="package-variant" size={20} color="#4A90E2" />
             <View style={styles.productosTexto}>
               <Text style={styles.productosLabel}>
                 {item.items} artículos

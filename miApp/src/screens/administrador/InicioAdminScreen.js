@@ -139,6 +139,8 @@ export default function InicioAdminScreen() {
   return (
     <ScrollView 
       style={styles.container}
+      // AQUI ESTA EL CAMBIO IMPORTANTE: AGREGAR PADDING AL FINAL DEL SCROLL
+      contentContainerStyle={{ paddingBottom: 100 }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#F5A623']} />
       }
@@ -235,8 +237,9 @@ export default function InicioAdminScreen() {
           </View>
         </Card.Content>
       </Card>
-
-      <View style={{ height: 30 }} />
+      
+      {/* Espacio extra al final para asegurar visibilidad */}
+      <View style={{ height: 50 }} />
     </ScrollView>
   );
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import { View, ActivityIndicator } from 'react-native'; // Importamos ActivityIndicator
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useApp } from '../context/AppContext';
@@ -24,92 +25,84 @@ import ProducerProfileScreen from '../screens/ProducerProfileScreen';
 const Stack = createNativeStackNavigator();
 
 export default function AppNavigator() {
-  const { isAuthenticated, user } = useApp();
+  // 1. Agregamos loadingAuth para esperar a que cargue la sesión
+  const { isAuthenticated, user, loadingAuth } = useApp();
+
+  // 2. Pantalla de carga (Splash Screen temporal)
+  // Esto evita que la app intente navegar antes de saber si estás logueado
+  if (loadingAuth) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFFFFF' }}>
+        <ActivityIndicator size="large" color="#6B9B37" />
+      </View>
+    );
+  }
 
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Welcome"
         screenOptions={{
           headerShown: false,
           animation: 'slide_from_right',
         }}
       >
         {!isAuthenticated ? (
-          // Stack de autenticación
+          // =================================================
+          // STACK PÚBLICO (No logueado)
+          // =================================================
           <>
             <Stack.Screen 
               name="Welcome" 
               component={WelcomeScreen}
-              options={{ title: 'Bienvenido' }}
             />
             <Stack.Screen 
               name="RoleSelection" 
               component={RoleSelectionScreen}
-              options={{ title: 'Selecciona tu rol' }}
             />
             <Stack.Screen 
               name="Login" 
               component={LoginScreen}
-              options={{ title: 'Iniciar Sesión' }}
             />
             <Stack.Screen 
               name="RegisterProductor" 
               component={RegisterProductor}
-              options={{ title: 'Registrarse como Productor' }}
             />
             <Stack.Screen 
               name="RegisterConsumidor" 
               component={RegisterConsumidor}
-              options={{ title: 'Registrarse como Consumidor' }}
             />
           </>
         ) : (
-          // Stack de dashboards según el rol
+          // =================================================
+          // STACK PRIVADO (Logueado - Según Rol)
+          // =================================================
           <>
+            {/* Rutas para PRODUCTOR */}
             {user?.role === 'productor' && (
               <>
-                <Stack.Screen 
-                  name="ProductorDashboard" 
-                  component={ProductorDashboard}
-                  options={{ title: 'Dashboard Productor' }}
-                />
-                <Stack.Screen 
-                  name="ProducerHome" 
-                  component={ProducerHomeScreen} 
-                  options={{ title: 'Inicio Productor' }} 
-                />
-                <Stack.Screen 
-                  name="AddProduct" 
-                  component={AddProductScreen} 
-                  options={{ title: 'Agregar Producto' }} 
-                />
-                <Stack.Screen 
-                  name="ProducerProfile" 
-                  component={ProducerProfileScreen} 
-                  options={{ title: 'Perfil Productor' }} 
-                />
+                <Stack.Screen name="ProductorDashboard" component={ProductorDashboard} />
+                <Stack.Screen name="ProducerHome" component={ProducerHomeScreen} />
+                <Stack.Screen name="AddProduct" component={AddProductScreen} />
+                <Stack.Screen name="ProducerProfile" component={ProducerProfileScreen} />
               </>
             )}
+
+            {/* Rutas para CONSUMIDOR */}
             {user?.role === 'consumidor' && (
-              <Stack.Screen 
-                name="ConsumidorDashboard" 
-                component={ConsumidorDashboard}
-                options={{ title: 'Dashboard Consumidor' }}
-              />
+              <>
+                <Stack.Screen name="ConsumidorDashboard" component={ConsumidorDashboard} />
+              </>
             )}
+
+            {/* Rutas para ADMINISTRADOR */}
             {user?.role === 'administrador' && (
-              <Stack.Screen 
-                name="AdministradorDashboard" 
-                component={AdministradorDashboard}
-                options={{ title: 'Dashboard Administrador' }}
-              />
+              <>
+                <Stack.Screen name="AdministradorDashboard" component={AdministradorDashboard} />
+              </>
             )}
-            <Stack.Screen 
-              name="Configuracion" 
-              component={ConfiguracionScreen} 
-              options={{ title: 'Configuración' }} 
-            />
+
+            {/* Rutas COMUNES (Configuración, etc.) */}
+            <Stack.Screen name="Configuracion" component={ConfiguracionScreen} />
           </>
         )}
       </Stack.Navigator>
@@ -117,30 +110,5 @@ export default function AppNavigator() {
   );
 }
 
-// Ajuste para manejar la acción RESET
-export function handleNavigationReset(navigation, isAuthenticated, user) {
-  if (!isAuthenticated) {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Welcome' }],
-    });
-  } else {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: `${user.role}Dashboard` }],
-    });
-  }
-}
-
-// Manejo de errores para la acción RESET
-export function handleResetAction(navigation) {
-  try {
-    navigation.reset({
-      index: 0,
-      routes: [{ name: 'Welcome' }],
-    });
-  } catch (error) {
-    console.error('Error al manejar la acción RESET:', error);
-    navigation.navigate('Welcome'); // Acción alternativa
-  }
-}
+// 3. ¡HE BORRADO LAS FUNCIONES DE ABAJO! 
+// No son necesarias y causaban el conflicto.

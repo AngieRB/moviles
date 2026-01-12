@@ -2,6 +2,8 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 import InicioAdminScreen from './InicioAdminScreen';
 import ClientesScreen from './ClientesScreen';
 import ProductoresAdminScreen from './ProductoresAdminScreen';
@@ -10,9 +12,9 @@ import ConfiguracionScreen from '../common/ConfiguracionScreen';
 
 const Tab = createBottomTabNavigator();
 
-// Dashboard del Administrador con pestañas
 export default function AdministradorDashboard() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
@@ -22,19 +24,22 @@ export default function AdministradorDashboard() {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.outline,
-          paddingHorizontal: 5,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          elevation: 10,
+          // Altura base (65) + espacio seguro del celular (notch/barra)
+          height: 65 + (insets.bottom > 0 ? insets.bottom : 5),
+          // Padding para subir los iconos y que no toquen el borde
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
+          paddingTop: 10,
         },
         tabBarItemStyle: {
-          flex: 1,
+          // Centra los elementos verticalmente
           justifyContent: 'center',
-          alignItems: 'center',
+          paddingVertical: 4,
         },
         tabBarLabelStyle: {
-          fontSize: 10,
-          fontWeight: '500',
+          fontSize: 11,
+          fontWeight: '600',
+          marginBottom: 4,
         },
         sceneStyle: {
           backgroundColor: theme.colors.background,
@@ -62,10 +67,10 @@ export default function AdministradorDashboard() {
         component={InicioAdminScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="view-dashboard" size={size} color={color} />
+            <Icon name="view-dashboard" size={28} color={color} />
           ),
           headerTitle: '⚙️ AgroConnect - Admin',
-          tabBarLabel: 'Dashboard',
+          tabBarLabel: 'Inicio',
         }}
       />
       <Tab.Screen
@@ -73,7 +78,7 @@ export default function AdministradorDashboard() {
         component={ClientesScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="account-group" size={size} color={color} />
+            <Icon name="account-group" size={28} color={color} />
           ),
           headerTitle: '👥 Clientes',
         }}
@@ -83,7 +88,7 @@ export default function AdministradorDashboard() {
         component={ProductoresAdminScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="leaf" size={size} color={color} />
+            <Icon name="leaf" size={28} color={color} />
           ),
           headerTitle: '🌾 Productores',
         }}
@@ -93,16 +98,17 @@ export default function AdministradorDashboard() {
         component={PerfilScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="account" size={size} color={color} />
+            <Icon name="account" size={28} color={color} />
           ),
           headerTitle: '👤 Mi Perfil',
         }}
       />
+      {/* Configuración oculta pero accesible */}
       <Tab.Screen
         name="Configuracion"
         component={ConfiguracionScreen}
         options={{
-          tabBarButton: () => null, // Ocultar del tab bar
+          tabBarButton: () => null,
           headerTitle: '⚙️ Configuración',
         }}
       />

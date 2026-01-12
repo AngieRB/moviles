@@ -230,7 +230,7 @@ export default function ConsumidorDashboard() {
         component={PedidosStackNavigator}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
-            <Icon name="package-multiple" size={focused ? 32 : 26} color={color} />
+            <Icon name="package-variant" size={focused ? 32 : 26} color={color} />
           ),
           tabBarLabel: 'Pedidos',
           headerShown: false,

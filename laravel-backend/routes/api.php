@@ -17,9 +17,8 @@ use App\Http\Controllers\StripeController;
 
 // Autenticación
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/register/consumidor', [AuthController::class, 'registerConsumidor']);
-Route::post('/register/productor', [AuthController::class, 'registerProductor']);
-
+Route::post('/register-consumidor', [AuthController::class, 'registerConsumidor']);
+Route::post('/register-productor', [AuthController::class, 'registerProductor']);
 // Productos públicos (para ver el catálogo sin login)
 Route::get('/productos', [ProductoController::class, 'index']);
 Route::get('/productos/{id}', [ProductoController::class, 'show']);
@@ -37,7 +36,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
-    
+
     // Listar usuarios por rol
     Route::get('/usuarios', [AuthController::class, 'listarUsuarios']);
 
@@ -121,7 +120,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::get('/admin/estadisticas', [PedidoController::class, 'estadisticasAdmin']);
     Route::get('/admin/pedidos', [PedidoController::class, 'todosPedidos']);
-    
+
     // Gestión de usuarios (solo admin)
     Route::put('/usuarios/{id}/verificar', [AuthController::class, 'verificarUsuario']);
     Route::put('/usuarios/{id}/rechazar', [AuthController::class, 'rechazarUsuario']);

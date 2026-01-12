@@ -56,7 +56,7 @@ class AuthController extends Controller
                 'telefono' => $user->telefono,
                 'role' => $user->role,
                 'cedula' => $user->cedula,
-                'roleData' => $user->role_data,
+                'roleData' => $user->role_data, // Ya es un array gracias a 'casts'
             ],
             'token' => $token,
         ], 200);
@@ -68,8 +68,8 @@ class AuthController extends Controller
     public function registerConsumidor(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|regex:/^[a-zA-Z\s]+$/',
-            'apellido' => 'required|regex:/^[a-zA-Z\s]+$/',
+            'name' => 'required|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/u',
+            'apellido' => 'required|regex:/^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]+$/u',
             'cedula' => 'required|digits:10|unique:users,cedula',
             'telefono' => 'required|digits:10',
             'email' => 'required|email|unique:users,email',
@@ -88,7 +88,8 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => 'consumidor',
-            'role_data' => json_encode(['direccion' => '']),
+            // Pasamos un array directo, el Modelo lo convertirá a JSON solo
+            'role_data' => ['direccion' => ''],
         ]);
 
         $token = $user->createToken('auth-token')->plainTextToken;
@@ -123,8 +124,8 @@ class AuthController extends Controller
             'tipoCultivos' => 'required|array',
             'experiencia' => 'nullable|string',
             'areaCultivo' => 'nullable|string',
-            'fotoCedula' => 'nullable|string', // Base64 o URL
-            'fotoFinca' => 'nullable|string',  // Base64 o URL
+            'fotoCedula' => 'nullable|string',
+            'fotoFinca' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
@@ -139,7 +140,8 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => 'productor',
-            'role_data' => json_encode([
+            // Pasamos ARRAY directo. Laravel lo guarda como JSON gracias al cast.
+            'role_data' => [
                 'nombreFinca' => $request->nombreFinca,
                 'ubicacionGPS' => $request->ubicacionGPS,
                 'tipoCultivos' => $request->tipoCultivos,
@@ -147,7 +149,7 @@ class AuthController extends Controller
                 'areaCultivo' => $request->areaCultivo,
                 'fotoCedula' => $request->fotoCedula,
                 'fotoFinca' => $request->fotoFinca,
-            ]),
+            ],
         ]);
 
         $token = $user->createToken('auth-token')->plainTextToken;
@@ -159,7 +161,7 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
-                'roleData' => json_decode($user->role_data),
+                'roleData' => $user->role_data, // Ya viene como array
             ],
             'token' => $token,
         ], 201);
@@ -193,13 +195,13 @@ class AuthController extends Controller
                 'telefono' => $user->telefono,
                 'cedula' => $user->cedula,
                 'role' => $user->role,
-                'roleData' => json_decode($user->role_data),
+                'roleData' => $user->role_data, // Ya viene como array
             ],
         ], 200);
     }
 
     /**
-     * Listar usuarios por rol
+     * Listar usuarios por rol (CORREGIDO)
      */
     public function listarUsuarios(Request $request)
     {
@@ -213,18 +215,21 @@ class AuthController extends Controller
 
         $usuarios = $query->orderBy('name')->get()->map(function ($user) {
             $roleData = null;
-            
+
+            // Accedemos a role_data como ARRAY (gracias al cast en User.php)
+            // Usamos ?? para evitar errores si el campo no existe
+
             if ($user->role === 'productor') {
                 $roleData = [
-                    'nombreFinca' => $user->nombre_finca,
-                    'ubicacion' => $user->ubicacion_finca,
+                    'nombreFinca' => $user->role_data['nombreFinca'] ?? 'N/A',
+                    'ubicacion' => $user->role_data['ubicacionGPS'] ?? 'N/A',
                 ];
             } elseif ($user->role === 'consumidor') {
                 $roleData = [
-                    'direccion' => $user->direccion,
+                    'direccion' => $user->role_data['direccion'] ?? 'N/A',
                 ];
             }
-            
+
             return [
                 'id' => $user->id,
                 'nombre' => $user->name,
@@ -250,7 +255,6 @@ class AuthController extends Controller
      */
     public function verificarUsuario(Request $request, $id)
     {
-        // Verificar que el usuario autenticado es admin
         if ($request->user()->role !== 'administrador') {
             return response()->json(['message' => 'No autorizado'], 403);
         }
@@ -280,7 +284,6 @@ class AuthController extends Controller
      */
     public function rechazarUsuario(Request $request, $id)
     {
-        // Verificar que el usuario autenticado es admin
         if ($request->user()->role !== 'administrador') {
             return response()->json(['message' => 'No autorizado'], 403);
         }
@@ -310,7 +313,6 @@ class AuthController extends Controller
      */
     public function eliminarUsuario(Request $request, $id)
     {
-        // Verificar que el usuario autenticado es admin
         if ($request->user()->role !== 'administrador') {
             return response()->json(['message' => 'No autorizado'], 403);
         }
@@ -321,7 +323,6 @@ class AuthController extends Controller
             return response()->json(['message' => 'Usuario no encontrado'], 404);
         }
 
-        // No permitir eliminar administradores
         if ($usuario->role === 'administrador') {
             return response()->json(['message' => 'No se puede eliminar un administrador'], 400);
         }
@@ -334,4 +335,3 @@ class AuthController extends Controller
         ], 200);
     }
 }
-

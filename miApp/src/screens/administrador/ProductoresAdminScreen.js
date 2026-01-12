@@ -252,9 +252,10 @@ Atentamente,
 
       <ScrollView
         style={styles.scrollView}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#F5A623']} />
-        }
+        contentContainerStyle={{ paddingBottom: 100 }} 
+  refreshControl={
+    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#F5A623']} />
+  }
       >
         {productoresFiltrados.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -395,39 +396,29 @@ const styles = StyleSheet.create({
   searchbar: {
     margin: 12,
     elevation: 2,
+    backgroundColor: 'white',
   },
   filtrosContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 4,
-    justifyContent: 'flex-start',
-    marginBottom: 4,
-    paddingHorizontal: 8,
+    gap: 8,
+    paddingHorizontal: 12,
+    marginBottom: 8,
   },
   chip: {
-    backgroundColor: '#E0E0E0',
-    height: 28,
-    borderRadius: 14,
-    marginRight: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 0,
-    minWidth: 70,
-    elevation: 0,
+    backgroundColor: '#e0e0e0',
   },
   chipActivo: {
     backgroundColor: '#F5A623',
-    elevation: 2,
   },
   chipVerificado: {
     backgroundColor: '#4CAF50',
-    elevation: 2,
   },
   chipPendiente: {
     backgroundColor: '#FF9800',
-    elevation: 2,
   },
   chipTextoActivo: {
-    color: '#fff',
+    color: 'white',
     fontWeight: 'bold',
   },
   scrollView: {
@@ -445,37 +436,34 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   card: {
-    marginHorizontal: 8,
-    marginBottom: 12,
-    borderRadius: 14,
-    elevation: 2,
-    backgroundColor: '#fff',
-    shadowColor: '#000',
-    shadowOpacity: 0.07,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
+    marginHorizontal: 12,
+    marginBottom: 16, // Más separación entre tarjetas
+    borderRadius: 12,
+    elevation: 3,
+    backgroundColor: 'white',
   },
   cardHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 8,
+    alignItems: 'flex-start',
+    marginBottom: 10,
   },
   avatarContainer: {
-    position: 'relative',
+    marginRight: 10,
   },
   verificadoBadge: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
+    // Usamos negativos para que "salga" un poco del avatar y se vea bien
+    bottom: -4, 
+    right: -4,
     backgroundColor: '#fff',
-    borderRadius: 10,
+    borderRadius: 12, // Redondo perfecto
+    zIndex: 10,
+    elevation: 4, // Sombra para que flote
+    padding: 2, // Un borde blanco pequeño alrededor del check
   },
   infoContainer: {
     flex: 1,
-    marginLeft: 12,
-    minWidth: 120,
-    maxWidth: '70%',
+    justifyContent: 'center',
   },
   nombre: {
     fontSize: 16,
@@ -485,26 +473,29 @@ const styles = StyleSheet.create({
   email: {
     fontSize: 13,
     color: '#666',
-    marginTop: 2,
   },
   telefono: {
     fontSize: 12,
     color: '#888',
-    marginTop: 2,
   },
   finca: {
     fontSize: 12,
     color: '#6B9B37',
+    fontWeight: '500',
     marginTop: 2,
   },
   estadoChip: {
-    height: 28,
+    height: 24, // Chip más pequeño para que no estorbe
+    alignSelf: 'flex-start',
   },
   divider: {
-    marginVertical: 8,
+    marginVertical: 10,
   },
   detalles: {
-    marginBottom: 12,
+    backgroundColor: '#f9f9f9',
+    padding: 10,
+    borderRadius: 8,
+    marginBottom: 15,
   },
   detalleItem: {
     fontSize: 13,
@@ -513,20 +504,17 @@ const styles = StyleSheet.create({
   },
   detalleLabel: {
     fontWeight: 'bold',
-    color: '#333',
+    color: '#444',
   },
+  // --- ESTILOS DE BOTONES CORREGIDOS ---
   botonesContainer: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    flexWrap: 'wrap',
-    gap: 4,
-    marginTop: 2,
+    justifyContent: 'space-between', // Separa los botones a los extremos
+    gap: 10, // Espacio entre botones
   },
   btn: {
+    flex: 1, // HACE QUE LOS BOTONES TENGAN EL MISMO TAMAÑO
     borderRadius: 8,
-    minWidth: 80,
-    height: 32,
-    paddingVertical: 0,
-    marginRight: 6,
+    marginHorizontal: 0, // Quitamos margenes extraños
   },
 });
