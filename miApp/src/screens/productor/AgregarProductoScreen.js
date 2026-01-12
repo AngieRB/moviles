@@ -1,83 +1,93 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_URL } from '../../services/apiClient';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { apiClient } from '../../services/apiClient';
+import { useApp } from '../../context/AppContext';
 
 export default function AgregarProductoScreen() {
+  const { user, token } = useApp();
   const [nombre, setNombre] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [precio, setPrecio] = useState('');
-  const [imagen, setImagen] = useState(null);
+  const [stock, setStock] = useState('');
   const [subiendo, setSubiendo] = useState(false);
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-    if (!result.canceled && result.assets && result.assets.length > 0) {
-      setImagen(result.assets[0]);
-    }
-  };
-
   const handleGuardar = async () => {
+    // Validar usuario autenticado
+    if (!user || !token) {
+      Alert.alert('Error', 'No hay sesión activa. Por favor inicia sesión de nuevo.');
+      return;
+    }
+    
+    // Validaciones
     if (!nombre.trim()) {
-      alert('El nombre es obligatorio.');
+      Alert.alert('Error', 'El nombre es obligatorio.');
       return;
     }
     if (!descripcion.trim()) {
-      alert('La descripción es obligatoria.');
+      Alert.alert('Error', 'La descripción es obligatoria.');
       return;
     }
-    if (!precio || isNaN(precio)) {
-      alert('El precio debe ser un número válido.');
+    if (!precio || isNaN(precio) || parseFloat(precio) <= 0) {
+      Alert.alert('Error', 'El precio debe ser un número válido mayor a 0.');
       return;
     }
+    if (!stock || isNaN(stock) || parseInt(stock) < 0) {
+      Alert.alert('Error', 'El stock debe ser un número válido mayor o igual a 0.');
+      return;
+    }
+    
     setSubiendo(true);
+    
     try {
-      const token = await AsyncStorage.getItem('token');
-      const formData = new FormData();
-      formData.append('nombre', nombre);
-      formData.append('descripcion', descripcion);
-      formData.append('precio', precio);
-      formData.append('categoria', 'General'); // Puedes cambiar esto si tienes categorías
-      formData.append('disponibles', 10); // Puedes pedir este dato al usuario
-      if (imagen) {
-        formData.append('imagen', {
-          uri: imagen.uri,
-          name: 'producto.jpg',
-          type: 'image/jpeg',
-        });
+      const productData = {
+        nombre: nombre.trim(),
+        descripcion: descripcion.trim(),
+        precio: parseFloat(precio),
+        categoria: 'General',
+        disponibles: parseInt(stock),
+      };
+
+      const response = await apiClient.post('/productos', productData);
+
+      Alert.alert(
+        'Éxito', 
+        'Producto agregado exitosamente',
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              setNombre('');
+              setDescripcion('');
+              setPrecio('');
+              setStock('');
+            }
+          }
+        ]
+      );
+
+    } catch (error) {
+      let errorMsg = 'Error al guardar el producto';
+      
+      if (error.response?.status === 401) {
+        errorMsg = 'Sesión expirada. Por favor inicia sesión de nuevo.';
+      } else if (error.response?.status === 403) {
+        errorMsg = 'No tienes permisos para crear productos.';
+      } else if (error.response?.data?.errors) {
+        errorMsg = Object.values(error.response.data.errors).flat().join('\n');
+      } else if (error.response?.data?.message) {
+        errorMsg = error.response.data.message;
+      } else if (error.message) {
+        errorMsg = error.message;
       }
-      const res = await fetch(`${API_URL}/productos`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
-        body: formData,
-      });
-      const data = await res.json();
-      if (res.ok) {
-        alert('Producto agregado exitosamente');
-        setNombre('');
-        setDescripcion('');
-        setPrecio('');
-        setImagen(null);
-      } else {
-        alert(data.message || 'Error al agregar producto');
-      }
-    } catch (e) {
-      alert('Error de red o servidor');
+      
+      Alert.alert('Error', errorMsg);
+    } finally {
+      setSubiendo(false);
     }
-    setSubiendo(false);
   };
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container}>
       <Text style={styles.title}>Agregar Nuevo Producto</Text>
       <TextInput
         style={styles.input}
@@ -90,6 +100,8 @@ export default function AgregarProductoScreen() {
         placeholder="Descripción Detallada"
         value={descripcion}
         onChangeText={setDescripcion}
+        multiline
+        numberOfLines={3}
       />
       <TextInput
         style={styles.input}
@@ -98,16 +110,17 @@ export default function AgregarProductoScreen() {
         onChangeText={setPrecio}
         keyboardType="numeric"
       />
-      <TouchableOpacity style={styles.fotoBtn} onPress={pickImage}>
-        <Text style={{ color: '#6B9B37', textAlign: 'center' }}>Agregar Foto</Text>
-      </TouchableOpacity>
-      {imagen && (
-        <Image source={{ uri: imagen.uri }} style={{ width: 120, height: 120, alignSelf: 'center', margin: 10, borderRadius: 10 }} />
-      )}
+      <TextInput
+        style={styles.input}
+        placeholder="Stock Disponible (cantidad)"
+        value={stock}
+        onChangeText={setStock}
+        keyboardType="numeric"
+      />
       <TouchableOpacity style={styles.button} onPress={handleGuardar} disabled={subiendo}>
         {subiendo ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>GUARDAR PRODUCTO</Text>}
       </TouchableOpacity>
-    </View>
+    </ScrollView>
   );
 }
 
@@ -133,14 +146,48 @@ const styles = StyleSheet.create({
     backgroundColor: '#ffffff',
   },
   fotoBtn: {
-    height: 40,
+    height: 50,
     backgroundColor: '#f7faf5',
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 10,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
+    marginBottom: 15,
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+    borderStyle: 'dashed',
+  },
+  fotoBtnText: {
+    color: '#4CAF50',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  imagePreviewContainer: {
+    position: 'relative',
+    alignSelf: 'center',
+    marginBottom: 15,
+  },
+  imagePreview: {
+    width: 200,
+    height: 150,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#4CAF50',
+  },
+  removeImageBtn: {
+    position: 'absolute',
+    top: -10,
+    right: -10,
+    backgroundColor: '#f44336',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeImageText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   button: {
     height: 50,

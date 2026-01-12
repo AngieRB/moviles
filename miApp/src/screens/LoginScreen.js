@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { StyleSheet, View, ScrollView, Platform, Alert } from 'react-native';
 import { Text, TextInput, Button, Divider, IconButton, Snackbar } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { roleColors } from '../theme/theme';
@@ -46,35 +46,7 @@ export default function LoginScreen({ route, navigation }) {
     setLoading(true);
     setError('');
     
-    // Validación especial para administrador con credenciales fijas
-    if (role === 'administrador') {
-      setTimeout(async () => {
-        if (validateAdminCredentials(email, password)) {
-          console.log('✅ Login exitoso - Administrador');
-          
-          // Crear usuario administrador
-          const userData = {
-            id: 1,
-            nombre: 'Administrador',
-            apellido: 'Sistema',
-            email: email,
-            telefono: 'N/A',
-            role: 'administrador',
-            cedula: 'ADMIN',
-          };
-          
-          // Crear un token ficticio para el administrador
-          await login(userData, 'admin-token-local');
-          setLoading(false);
-        } else {
-          setLoading(false);
-          Alert.alert('Error de autenticación', ADMIN_ERROR_MESSAGE);
-        }
-      }, 1000);
-      return;
-    }
-    
-    // LOGIN REAL PARA PRODUCTOR Y CONSUMIDOR - CONSUME LA API
+    // LOGIN REAL PARA TODOS LOS ROLES - CONSUME LA API
     try {
       console.log('📡 Intentando login con API...', { email, role });
       
@@ -90,7 +62,8 @@ export default function LoginScreen({ route, navigation }) {
       await login(data.user, data.token);
       
     } catch (error) {
-      console.error('❌ Error en login:', error);
+      // Silenciar el error técnico en consola, mostrar mensaje amigable
+      console.log('Login fallido - verificar conexión al servidor');
       
       if (error.response) {
         // El servidor respondió con un código de error
@@ -103,15 +76,20 @@ export default function LoginScreen({ route, navigation }) {
           setError('Correo o contraseña incorrectos');
         } else if (statusCode === 404) {
           setError('No se encontró el servidor. Verifica la conexión.');
+        } else if (statusCode === 401) {
+          setError('Credenciales inválidas. Verifica tu correo y contraseña.');
         } else {
           setError(errorMessage);
         }
+      } else if (error.code === 'ERR_NETWORK' || error.message === 'Network Error') {
+        // Error de red - servidor no disponible
+        setError('No se pudo conectar con el servidor. Verifica que el servidor esté encendido.');
       } else if (error.request) {
         // No se recibió respuesta del servidor
-        setError('No se pudo conectar con el servidor. Verifica tu conexión a internet y que el servidor Laravel esté ejecutándose.');
+        setError('El servidor no responde. Verifica tu conexión a internet.');
       } else {
         // Otro tipo de error
-        setError('Error inesperado: ' + error.message);
+        setError('Error al iniciar sesión. Intenta nuevamente.');
       }
     } finally {
       setLoading(false);
@@ -124,141 +102,139 @@ export default function LoginScreen({ route, navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <View style={styles.container}>
       <StatusBar style="dark" />
-      <ScrollView 
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <IconButton
-            icon="arrow-left"
-            size={24}
-            onPress={() => navigation.goBack()}
-            style={styles.backButton}
-          />
-          <Text 
-            variant="displaySmall" 
-            style={[styles.logo, { color: config.color }]}
-          >
-            AgroConnect
-          </Text>
-        </View>
-
-        {/* Role Icon */}
-        <View style={[styles.roleIconContainer, { backgroundColor: config.color + '20' }]}>
-          <Text style={styles.roleIcon}>{config.icon}</Text>
-        </View>
-
-        <Text variant="headlineMedium" style={styles.title}>
-          Iniciar Sesión
-        </Text>
-        
-        <Text variant="bodyLarge" style={styles.subtitle}>
-          {config.title}
-        </Text>
-
-        {/* Form */}
-        <View style={styles.form}>
-          <TextInput
-            label="Correo electrónico"
-            value={email}
-            onChangeText={setEmail}
-            mode="outlined"
-            keyboardType="email-address"
-            autoCapitalize="none"
-            autoComplete="email"
-            textContentType="emailAddress"
-            left={<TextInput.Icon icon="email" />}
-            style={styles.input}
-            outlineColor={config.color}
-            activeOutlineColor={config.color}
-          />
-
-          <TextInput
-            label="Contraseña"
-            value={password}
-            onChangeText={setPassword}
-            mode="outlined"
-            secureTextEntry={!showPassword}
-            autoCapitalize="none"
-            autoComplete="password"
-            textContentType="password"
-            left={<TextInput.Icon icon="lock" />}
-            right={
-              <TextInput.Icon 
-                icon={showPassword ? "eye-off" : "eye"}
-                onPress={() => setShowPassword(!showPassword)}
-              />
-            }
-            style={styles.input}
-            outlineColor={config.color}
-            activeOutlineColor={config.color}
-          />
-
-          <Button
-            mode="text"
-            onPress={handleForgotPassword}
-            style={styles.forgotButton}
-            labelStyle={[styles.forgotButtonLabel, { color: config.color }]}
-          >
-            ¿Olvidaste tu contraseña?
-          </Button>
-
-          <Button
-            mode="contained"
-            onPress={handleLogin}
-            loading={loading}
-            disabled={!email || !password || loading}
-            style={[styles.loginButton, { backgroundColor: config.color }]}
-            contentStyle={styles.loginButtonContent}
-            labelStyle={styles.loginButtonLabel}
-          >
-            Iniciar Sesión
-          </Button>
-
-          <Divider style={styles.divider} />
-
-          <View style={styles.registerContainer}>
-            <Text variant="bodyMedium" style={styles.registerText}>
-              ¿No tienes cuenta?
+          {/* Header */}
+          <View style={styles.header}>
+            <IconButton
+              icon="arrow-left"
+              size={24}
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+            />
+            <Text
+              variant="displaySmall"
+              style={[styles.logo, { color: config.color }]}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              AgroConnect
             </Text>
+          </View>
+
+          {/* Role Icon */}
+          <View style={[styles.roleIconContainer, { backgroundColor: config.color + '20' }]}> 
+            <Text style={styles.roleIcon}>{config.icon}</Text>
+          </View>
+
+          <Text variant="headlineMedium" style={styles.title}>
+            Iniciar Sesión
+          </Text>
+          <Text variant="bodyLarge" style={styles.subtitle}>
+            {config.title}
+          </Text>
+
+          {/* Form */}
+          <View style={styles.form}>
+            <TextInput
+              label="Correo electrónico"
+              value={email}
+              onChangeText={setEmail}
+              mode="outlined"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoComplete="email"
+              textContentType="emailAddress"
+              left={<TextInput.Icon icon="email" />}
+              style={styles.input}
+              outlineColor={config.color}
+              activeOutlineColor={config.color}
+            />
+
+            <TextInput
+              label="Contraseña"
+              value={password}
+              onChangeText={setPassword}
+              mode="outlined"
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoComplete="password"
+              textContentType="password"
+              left={<TextInput.Icon icon="lock" />}
+              right={
+                <TextInput.Icon
+                  icon={showPassword ? "eye-off" : "eye"}
+                  onPress={() => setShowPassword(!showPassword)}
+                />
+              }
+              style={styles.input}
+              outlineColor={config.color}
+              activeOutlineColor={config.color}
+            />
+
             <Button
               mode="text"
-              onPress={() => {
-                if (role === 'productor') {
-                  navigation.navigate('RegisterProductor');
-                } else if (role === 'consumidor') {
-                  navigation.navigate('RegisterConsumidor');
-                }
-              }}
-              labelStyle={[styles.registerButtonLabel, { color: config.color }]}
+              onPress={handleForgotPassword}
+              style={styles.forgotButton}
+              labelStyle={[styles.forgotButtonLabel, { color: config.color }]}
             >
-              Regístrate aquí
+              ¿Olvidaste tu contraseña?
             </Button>
-          </View>
-        </View>
 
-        {/* Snackbar para errores */}
-        <Snackbar
-          visible={!!error}
-          onDismiss={() => setError('')}
-          duration={5000}
-          action={{
-            label: 'Cerrar',
-            onPress: () => setError(''),
-          }}
-          style={styles.snackbar}
-        >
-          {error}
-        </Snackbar>
+            <Button
+              mode="contained"
+              onPress={handleLogin}
+              loading={loading}
+              disabled={!email || !password || loading}
+              style={[styles.loginButton, { backgroundColor: config.color }]}
+              contentStyle={styles.loginButtonContent}
+              labelStyle={styles.loginButtonLabel}
+            >
+              Iniciar Sesión
+            </Button>
+
+            <Divider style={styles.divider} />
+
+            <View style={styles.registerContainer}>
+              <Text variant="bodyMedium" style={styles.registerText}>
+                ¿No tienes cuenta?
+              </Text>
+              <Button
+                mode="text"
+                onPress={() => {
+                  if (role === 'productor') {
+                    navigation.navigate('RegisterProductor');
+                  } else if (role === 'consumidor') {
+                    navigation.navigate('RegisterConsumidor');
+                  }
+                }}
+                labelStyle={[styles.registerButtonLabel, { color: config.color }]}
+              >
+                Regístrate aquí
+              </Button>
+            </View>
+          </View>
+
+          {/* Snackbar para errores */}
+          <Snackbar
+            visible={!!error}
+            onDismiss={() => setError('')}
+            duration={5000}
+            action={{
+              label: 'Cerrar',
+              onPress: () => setError(''),
+            }}
+            style={styles.snackbar}
+          >
+            {error}
+          </Snackbar>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -269,6 +245,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 24,
     paddingBottom: 40,
   },
@@ -312,6 +290,8 @@ const styles = StyleSheet.create({
   },
   form: {
     width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
   },
   input: {
     marginBottom: 16,

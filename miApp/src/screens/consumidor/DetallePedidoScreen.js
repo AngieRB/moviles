@@ -1,16 +1,22 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   Linking,
+  Alert,
+  Platform,
 } from 'react-native';
-import { Card, Text, Divider, Button } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Card, Text, Divider, Button, ActivityIndicator, Portal, Dialog } from 'react-native-paper';
+import { MaterialCommunityIcons, MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import apiClient from '../../services/apiClient';
 
 export default function DetallePedidoScreen({ route, navigation }) {
-  const { pedido } = route.params;
+  const { pedido: pedidoInicial } = route.params;
+  const [pedido, setPedido] = useState(pedidoInicial);
+  const [confirmando, setConfirmando] = useState(false);
+  const [dialogVisible, setDialogVisible] = useState(false);
 
   // Datos detallados del pedido
   const detalles = [
@@ -38,36 +44,111 @@ export default function DetallePedidoScreen({ route, navigation }) {
   ];
 
   const getEstadoColor = (estado) => {
-    switch (estado) {
-      case 'Entregado':
+    const estadoLower = estado?.toLowerCase();
+    switch (estadoLower) {
+      case 'entregado':
         return '#4CAF50';
-      case 'En camino':
+      case 'enviado':
         return '#FF9800';
-      case 'Confirmado':
+      case 'procesando':
         return '#2196F3';
+      case 'pendiente':
+        return '#9C27B0';
+      case 'cancelado':
+        return '#F44336';
       default:
         return '#999';
     }
   };
 
+  const getEstadoNormalizado = (estado) => {
+    const estadoLower = estado?.toLowerCase();
+    switch (estadoLower) {
+      case 'entregado':
+        return 'Entregado';
+      case 'enviado':
+        return 'Enviado';
+      case 'procesando':
+        return 'Procesando';
+      case 'pendiente':
+        return 'Pendiente';
+      case 'cancelado':
+        return 'Cancelado';
+      default:
+        return estado;
+    }
+  };
+
+  const confirmarEntrega = async () => {
+    if (Platform.OS === 'web') {
+      // En web, usar el diálogo de React Native Paper
+      setDialogVisible(true);
+    } else {
+      // En móvil, usar Alert nativo
+      Alert.alert(
+        'Confirmar Entrega',
+        '¿Confirmas que has recibido tu pedido correctamente?',
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          { text: 'Sí, lo recibí', onPress: ejecutarConfirmacion },
+        ]
+      );
+    }
+  };
+
+  const ejecutarConfirmacion = async () => {
+    setDialogVisible(false);
+    setConfirmando(true);
+    try {
+      // Usar idReal si existe (ID numérico), sino usar id
+      const pedidoId = pedido.idReal || pedido.id;
+      console.log('Confirmando pedido ID:', pedidoId);
+      const response = await apiClient.put(`/pedidos/${pedidoId}/confirmar-recepcion`);
+      console.log('Respuesta:', response.data);
+      setPedido({ ...pedido, estado: 'entregado' });
+      if (Platform.OS === 'web') {
+        alert('¡Gracias por confirmar la recepción de tu pedido!');
+      } else {
+        Alert.alert('¡Éxito!', 'Gracias por confirmar la recepción de tu pedido');
+      }
+    } catch (error) {
+      console.error('Error al confirmar:', error.response?.data || error);
+      const mensaje = error.response?.data?.message || 'No se pudo confirmar la entrega';
+      if (Platform.OS === 'web') {
+        alert('Error: ' + mensaje);
+      } else {
+        Alert.alert('Error', mensaje);
+      }
+    } finally {
+      setConfirmando(false);
+    }
+  };
+
+  const estadoActual = pedido.estado?.toLowerCase();
+  
   const pasos = [
-    { titulo: 'Pedido Realizado', completado: true, fecha: '01 Ene' },
-    {
-      titulo: 'Confirmado',
-      completado: true,
-      fecha: '01 Ene',
+    { 
+      titulo: 'Pedido Realizado', 
+      completado: true, 
+      fecha: pedido.fecha ? new Date(pedido.fecha).toLocaleDateString('es-ES', { day: '2-digit', month: 'short' }) : '-'
     },
     {
-      titulo: 'En camino',
-      completado: pedido.estado !== 'Confirmado',
-      fecha: '02 Ene',
+      titulo: 'Procesando',
+      completado: ['procesando', 'enviado', 'entregado'].includes(estadoActual),
+      fecha: '-',
+    },
+    {
+      titulo: 'Enviado',
+      completado: ['enviado', 'entregado'].includes(estadoActual),
+      fecha: '-',
     },
     {
       titulo: 'Entregado',
-      completado: pedido.estado === 'Entregado',
-      fecha: pedido.estado === 'Entregado' ? '03 Ene' : '-',
+      completado: estadoActual === 'entregado',
+      fecha: estadoActual === 'entregado' ? 'Completado' : '-',
     },
   ];
+
 
   return (
     <ScrollView style={styles.container}>
@@ -76,21 +157,52 @@ export default function DetallePedidoScreen({ route, navigation }) {
         <View style={styles.estadoContent}>
           <View>
             <Text style={styles.estadoLabel}>Estado actual</Text>
-            <Text style={styles.estadoValor}>{pedido.estado}</Text>
+            <Text style={[styles.estadoValor, { color: getEstadoColor(pedido.estado) }]}>
+              {getEstadoNormalizado(pedido.estado)}
+            </Text>
           </View>
           <Icon
             name={
-              pedido.estado === 'Entregado'
+              estadoActual === 'entregado'
                 ? 'check-circle'
-                : pedido.estado === 'En camino'
+                : estadoActual === 'enviado'
                   ? 'truck-fast'
-                  : 'clock-outline'
+                  : estadoActual === 'procesando'
+                    ? 'clock-check'
+                    : estadoActual === 'cancelado'
+                      ? 'close-circle'
+                      : 'clock-outline'
             }
             size={48}
             color={getEstadoColor(pedido.estado)}
           />
         </View>
       </Card>
+
+      {/* Botón para confirmar entrega - solo si está enviado o procesando */}
+      {['enviado', 'procesando'].includes(estadoActual) && (
+        <Card style={styles.confirmarCard}>
+          <View style={styles.confirmarContent}>
+            <Icon name="package-variant-closed-check" size={32} color="#4CAF50" />
+            <View style={styles.confirmarTexto}>
+              <Text style={styles.confirmarTitulo}>¿Ya recibiste tu pedido?</Text>
+              <Text style={styles.confirmarSubtitulo}>
+                Confirma cuando hayas recibido tus productos
+              </Text>
+            </View>
+          </View>
+          <Button
+            mode="contained"
+            onPress={confirmarEntrega}
+            loading={confirmando}
+            disabled={confirmando}
+            style={styles.btnConfirmar}
+            icon="check"
+          >
+            Confirmar Recepción
+          </Button>
+        </Card>
+      )}
 
       {/* Timeline de estados */}
       <Card style={styles.timelineCard}>
@@ -246,6 +358,22 @@ export default function DetallePedidoScreen({ route, navigation }) {
           Volver a pedidos
         </Button>
       </View>
+
+      {/* Diálogo de confirmación para web */}
+      <Portal>
+        <Dialog visible={dialogVisible} onDismiss={() => setDialogVisible(false)}>
+          <Dialog.Title>Confirmar Entrega</Dialog.Title>
+          <Dialog.Content>
+            <Text>¿Confirmas que has recibido tu pedido correctamente?</Text>
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setDialogVisible(false)}>Cancelar</Button>
+            <Button onPress={ejecutarConfirmacion} loading={confirmando}>
+              Sí, lo recibí
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </ScrollView>
   );
 }
@@ -443,5 +571,37 @@ const styles = StyleSheet.create({
   btnVolver: {
     backgroundColor: '#4A90E2',
     marginTop: 6,
+  },
+  confirmarCard: {
+    margin: 12,
+    marginTop: 0,
+    padding: 16,
+    elevation: 3,
+    backgroundColor: '#E8F5E9',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#4CAF50',
+  },
+  confirmarContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  confirmarTexto: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  confirmarTitulo: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#2E7D32',
+  },
+  confirmarSubtitulo: {
+    fontSize: 12,
+    color: '#66BB6A',
+    marginTop: 2,
+  },
+  btnConfirmar: {
+    backgroundColor: '#4CAF50',
   },
 });

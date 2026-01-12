@@ -1,67 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   FlatList,
   StyleSheet,
   TouchableOpacity,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { Card, Text, Chip, Divider } from 'react-native-paper';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import apiClient from '../../services/apiClient';
 
 export default function MisPedidosScreen({ navigation }) {
-  const [pedidos] = useState([
-    {
-      id: 'PED-001',
-      fecha: '2024-01-03',
-      estado: 'Entregado',
-      total: 15.80,
-      items: 3,
-      productos: 'Tomates, Lechuga, Zanahoria',
-      color: '#4CAF50',
-      icono: 'check-circle',
-    },
-    {
-      id: 'PED-002',
-      fecha: '2024-01-02',
-      estado: 'En camino',
-      total: 28.50,
-      items: 5,
-      productos: 'Manzanas, Plátanos, Zanahorias...',
-      color: '#FF9800',
-      icono: 'truck-fast',
-    },
-    {
-      id: 'PED-003',
-      fecha: '2024-01-01',
-      estado: 'Confirmado',
-      total: 12.30,
-      items: 2,
-      productos: 'Lechuga, Tomates',
-      color: '#2196F3',
-      icono: 'clock-outline',
-    },
-    {
-      id: 'PED-004',
-      fecha: '2023-12-31',
-      estado: 'Entregado',
-      total: 45.75,
-      items: 8,
-      productos: 'Varios productos de granja',
-      color: '#4CAF50',
-      icono: 'check-circle',
-    },
-    {
-      id: 'PED-005',
-      fecha: '2023-12-29',
-      estado: 'Entregado',
-      total: 19.99,
-      items: 4,
-      productos: 'Frutas y vegetales',
-      color: '#4CAF50',
-      icono: 'check-circle',
-    },
-  ]);
+  const [pedidos, setPedidos] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    cargarPedidos();
+  }, []);
+
+  const cargarPedidos = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get('/mis-pedidos');
+      const pedidosData = response.data.pedidos || response.data || [];
+      
+      console.log('Pedidos recibidos:', pedidosData);
+      
+      // Formatear los pedidos para mostrar
+      const pedidosFormateados = pedidosData.map(pedido => ({
+        id: `PED-${String(pedido.id).padStart(3, '0')}`,
+        idReal: pedido.id,
+        fecha: pedido.fecha || pedido.created_at,
+        estado: pedido.estado || 'Pendiente',
+        total: parseFloat(pedido.total) || 0,
+        items: pedido.items?.length || 0,
+        productos: pedido.items?.map(i => i.producto).join(', ') || 'Productos',
+      }));
+      
+      setPedidos(pedidosFormateados);
+    } catch (error) {
+      console.error('Error al cargar pedidos:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getEstadoColor = (estado) => {
     switch (estado) {
@@ -156,7 +139,12 @@ export default function MisPedidosScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {pedidos.length === 0 ? (
+      {loading ? (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color="#4A90E2" />
+          <Text style={styles.emptyText}>Cargando pedidos...</Text>
+        </View>
+      ) : pedidos.length === 0 ? (
         <View style={styles.emptyContainer}>
           <MaterialCommunityIcons name="package-outline" size={64} color="#ccc" />
           <Text style={styles.emptyTitle}>Sin pedidos</Text>

@@ -1,147 +1,267 @@
-
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, StyleSheet, FlatList, TextInput, Button, KeyboardAvoidingView, Platform, TouchableOpacity, Image } from 'react-native';
-import Pusher from 'pusher-js/react-native';
-import axios from 'axios';
-
-// Configura estos valores según tu backend y Pusher
-const PUSHER_KEY = 'dc5b6a1aad26978b963c';
-const PUSHER_CLUSTER = 'us2';
-export const API_URL = "http://192.168.90.15:8000/api";
-
-// Simulación de productor autenticado (ajusta según tu auth real)
-const PRODUCTOR_ID = 1;
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  FlatList, 
+  TextInput, 
+  KeyboardAvoidingView, 
+  Platform, 
+  TouchableOpacity, 
+  ActivityIndicator,
+  Alert
+} from 'react-native';
+import { useApp } from '../../context/AppContext';
+import apiClient from '../../services/apiClient';
+import { useNotificaciones } from '../../context/NotificacionesContext';
 
 export default function ChatClientesScreen() {
-  const [messages, setMessages] = useState([]);
+  const { user } = useApp();
+  const { marcarMensajesLeidos } = useNotificaciones();
+  const [chats, setChats] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [mensajes, setMensajes] = useState([]);
   const [input, setInput] = useState('');
-
-  const [conversaciones, setConversaciones] = useState([]); // [{cliente: {id, nombre}, mensajes: []}]
-  const [selectedConv, setSelectedConv] = useState(null); // conversación activa
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const flatListRef = useRef();
 
-  // Obtener conversaciones activas desde el backend
+  // Cargar lista de chats del productor
   useEffect(() => {
-    const fetchConversaciones = async () => {
-      try {
-        const res = await axios.get(`${API_URL}/chat/conversaciones-activas?productor_id=${PRODUCTOR_ID}`);
-        setConversaciones(res.data);
-        if (res.data.length > 0 && !selectedConv) {
-          setSelectedConv(res.data[0]);
-        }
-      } catch (e) {
-        setConversaciones([]);
-      }
-    };
-    fetchConversaciones();
+    cargarChats();
   }, []);
 
-  // Escuchar mensajes en tiempo real con Pusher SOLO para la conversación activa
-  useEffect(() => {
-    if (!selectedConv) return;
-    const pusher = new Pusher(PUSHER_KEY, { cluster: PUSHER_CLUSTER });
-    const channel = pusher.subscribe(`chat-productor-${PRODUCTOR_ID}-cliente-${selectedConv.cliente.id}`);
-    channel.bind('nuevo-mensaje', function(data) {
-      setConversaciones(prev => prev.map(conv =>
-        conv.cliente.id === selectedConv.cliente.id
-          ? { ...conv, mensajes: [...conv.mensajes, data.message] }
-          : conv
-      ));
-    });
-    return () => {
-      channel.unbind_all();
-      channel.unsubscribe();
-      pusher.disconnect();
-    };
-  }, [selectedConv]);
-
-  // Cambiar de conversación y cargar mensajes históricos
-  const handleSelectConv = async (conv) => {
-    setSelectedConv(conv);
-    // Si quieres, puedes recargar mensajes históricos aquí
-  };
-
-  const sendMessage = async () => {
-    if (!input.trim() || !selectedConv) return;
+  const cargarChats = async () => {
     try {
-      await axios.post(`${API_URL}/chat/enviar`, {
-        to: selectedConv.cliente.id,
-        from: PRODUCTOR_ID,
-        message: input,
-      });
-      setConversaciones(prev => prev.map(conv =>
-        conv.cliente.id === selectedConv.cliente.id
-          ? { ...conv, mensajes: [...conv.mensajes, { from: PRODUCTOR_ID, to: selectedConv.cliente.id, text: input }] }
-          : conv
-      ));
-      setInput('');
-      flatListRef.current?.scrollToEnd({ animated: true });
-    } catch (e) {
-      alert('Error enviando mensaje');
+      setLoading(true);
+      const response = await apiClient.get('/chats');
+      setChats(response.data.chats || []);
+      
+      // Si hay chats, seleccionar el primero automáticamente
+      if (response.data.chats && response.data.chats.length > 0 && !selectedChat) {
+        seleccionarChat(response.data.chats[0]);
+      }
+    } catch (error) {
+      console.error('Error al cargar chats:', error);
+      Alert.alert('Error', 'No se pudieron cargar los chats');
+    } finally {
+      setLoading(false);
     }
   };
 
+  // Seleccionar un chat y cargar sus mensajes
+  const seleccionarChat = async (chat) => {
+    try {
+      setSelectedChat(chat);
+      const response = await apiClient.get(`/chats/${chat.id}/mensajes`);
+      setMensajes(response.data.mensajes || []);
+      
+      // Marcar mensajes como leídos
+      await marcarMensajesLeidos(chat.id);
+      
+      // Scroll al final de los mensajes
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    } catch (error) {
+      console.error('Error al cargar mensajes:', error);
+      Alert.alert('Error', 'No se pudieron cargar los mensajes');
+    }
+  };
+
+  // Enviar mensaje
+  const enviarMensaje = async () => {
+    if (!input.trim() || !selectedChat) return;
+    
+    const mensajeTexto = input.trim();
+    setInput('');
+    
+    try {
+      setSending(true);
+      const response = await apiClient.post(`/chats/${selectedChat.id}/mensajes`, {
+        mensaje: mensajeTexto,
+      });
+      
+      // Agregar el nuevo mensaje a la lista
+      const nuevoMensaje = {
+        id: response.data.mensaje?.id || Date.now(),
+        mensaje: mensajeTexto,
+        user_id: user.id,
+        es_mio: true,
+        created_at: new Date().toISOString(),
+      };
+      
+      setMensajes(prev => [...prev, nuevoMensaje]);
+      
+      // Actualizar último mensaje en la lista de chats
+      setChats(prev => prev.map(chat => 
+        chat.id === selectedChat.id 
+          ? { ...chat, ultimo_mensaje: mensajeTexto }
+          : chat
+      ));
+      
+      // Scroll al final
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    } catch (error) {
+      console.error('Error al enviar mensaje:', error);
+      Alert.alert('Error', 'No se pudo enviar el mensaje');
+      // Devolver el texto al input si falló
+      setInput(mensajeTexto);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  // Recargar mensajes cada cierto tiempo (polling simple)
+  useEffect(() => {
+    if (!selectedChat) return;
+    
+    const interval = setInterval(async () => {
+      try {
+        const response = await apiClient.get(`/chats/${selectedChat.id}/mensajes`);
+        const nuevosMensajes = response.data.mensajes || [];
+        
+        // Solo actualizar si hay cambios
+        if (nuevosMensajes.length !== mensajes.length) {
+          setMensajes(nuevosMensajes);
+        }
+      } catch (error) {
+        console.error('Error al actualizar mensajes:', error);
+      }
+    }, 3000); // Cada 3 segundos
+    
+    return () => clearInterval(interval);
+  }, [selectedChat, mensajes.length]);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4CAF50" />
+        <Text style={styles.loadingText}>Cargando chats...</Text>
+      </View>
+    );
+  }
+
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
       <View style={styles.container}>
         <Text style={styles.title}>Chat con Clientes</Text>
-        {/* Lista de conversaciones activas */}
-        <View style={styles.clientesContainer}>
-          <Text style={styles.subTitle}>Conversaciones activas:</Text>
-          <FlatList
-            data={conversaciones}
-            keyExtractor={item => item.cliente.id.toString()}
-            renderItem={({ item }) => {
-              const tieneNoLeidos = item.no_leidos > 0;
-              return (
+        
+        {/* Lista de conversaciones */}
+        <View style={styles.chatListContainer}>
+          <Text style={styles.subTitle}>Conversaciones:</Text>
+          {chats.length === 0 ? (
+            <Text style={styles.emptyText}>No tienes conversaciones activas</Text>
+          ) : (
+            <FlatList
+              horizontal
+              data={chats}
+              keyExtractor={item => item.id.toString()}
+              renderItem={({ item }) => (
                 <TouchableOpacity
-                  style={[styles.chatItem, selectedConv?.cliente.id === item.cliente.id && styles.chatItemSelected]}
-                  onPress={() => handleSelectConv(item)}
+                  style={[
+                    styles.chatItem, 
+                    selectedChat?.id === item.id && styles.chatItemSelected
+                  ]}
+                  onPress={() => seleccionarChat(item)}
                 >
-                  <Image
-                    source={item.cliente.foto ? { uri: item.cliente.foto } : require('../../../assets/default-user.png')}
-                    style={styles.avatar}
-                  />
-                  <View style={{ flex: 1 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <Text style={styles.clienteNombre}>{item.cliente.nombre}</Text>
-                      {tieneNoLeidos && <View style={styles.dot} />}
-                    </View>
-                    <Text style={styles.ultimoMensaje} numberOfLines={1}>{item.ultimo_mensaje}</Text>
-                  </View>
+                  <Text style={styles.chatItemName}>{item.otro_usuario.nombre}</Text>
+                  <Text style={styles.chatItemRole}>
+                    {item.otro_usuario.role === 'consumidor' ? '🛒' : '🌾'}
+                  </Text>
                 </TouchableOpacity>
-              );
-            }}
-            ListEmptyComponent={<Text style={{ marginTop: 10, marginLeft: 10 }}>No tienes conversaciones activas</Text>}
-          />
+              )}
+              showsHorizontalScrollIndicator={false}
+            />
+          )}
         </View>
-        {/* Mensajes de la conversación activa */}
-        <View style={styles.chatContainer}>
-          {selectedConv ? (
+
+        {/* Mensajes */}
+        <View style={styles.messagesContainer}>
+          {!selectedChat ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Selecciona una conversación</Text>
+            </View>
+          ) : (
             <>
+              <View style={styles.chatHeader}>
+                <Text style={styles.chatHeaderText}>
+                  {selectedChat.otro_usuario.nombre}
+                </Text>
+              </View>
+              
               <FlatList
                 ref={flatListRef}
-                data={selectedConv.mensajes}
-                keyExtractor={(_, idx) => idx.toString()}
+                data={mensajes}
+                keyExtractor={(item) => item.id.toString()}
                 renderItem={({ item }) => (
-                  <View style={[styles.messageBubble, item.from === PRODUCTOR_ID ? styles.messageOut : styles.messageIn]}>
-                    <Text style={styles.messageText}>{item.text}</Text>
+                  <View 
+                    style={[
+                      styles.messageBubble, 
+                      item.es_mio ? styles.messageOut : styles.messageIn
+                    ]}
+                  >
+                    <Text style={[
+                      styles.messageText,
+                      item.es_mio && styles.messageTextOut
+                    ]}>
+                      {item.mensaje}
+                    </Text>
+                    <Text style={[
+                      styles.messageTime,
+                      item.es_mio && styles.messageTimeOut
+                    ]}>
+                      {new Date(item.created_at).toLocaleTimeString('es-ES', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </Text>
                   </View>
                 )}
-                contentContainerStyle={{ flexGrow: 1, justifyContent: 'flex-end' }}
+                contentContainerStyle={{ 
+                  flexGrow: 1, 
+                  paddingVertical: 10,
+                  paddingHorizontal: 10,
+                }}
+                ListEmptyComponent={
+                  <View style={styles.emptyContainer}>
+                    <Text style={styles.emptyText}>No hay mensajes aún</Text>
+                    <Text style={styles.emptySubText}>Envía el primer mensaje</Text>
+                  </View>
+                }
               />
-              <View style={styles.inputRow}>
+              
+              {/* Input de mensaje */}
+              <View style={styles.inputContainer}>
                 <TextInput
                   value={input}
                   onChangeText={setInput}
                   placeholder="Escribe un mensaje..."
                   style={styles.input}
+                  multiline
+                  maxLength={1000}
                 />
-                <Button title="Enviar" onPress={sendMessage} />
+                <TouchableOpacity 
+                  style={[
+                    styles.sendButton,
+                    (!input.trim() || sending) && styles.sendButtonDisabled
+                  ]}
+                  onPress={enviarMensaje}
+                  disabled={!input.trim() || sending}
+                >
+                  {sending ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={styles.sendButtonText}>➤</Text>
+                  )}
+                </TouchableOpacity>
               </View>
             </>
-          ) : (
-            <Text style={{ marginTop: 40 }}>No tienes conversaciones activas</Text>
           )}
         </View>
       </View>
@@ -153,100 +273,155 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
-    paddingTop: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F5F5F5',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#6B9B37',
+    color: '#4CAF50',
     textAlign: 'center',
-    marginBottom: 10,
+    paddingVertical: 15,
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
   },
   subTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 6,
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 8,
     marginLeft: 10,
   },
-  clientesContainer: {
-    paddingVertical: 8,
+  chatListContainer: {
+    backgroundColor: '#fff',
+    paddingVertical: 10,
     borderBottomWidth: 1,
-    borderColor: '#e0e0e0',
-    marginBottom: 8,
-    minHeight: 90,
+    borderBottomColor: '#e0e0e0',
   },
   chatItem: {
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    marginHorizontal: 5,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 20,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderColor: '#f0f0f0',
-    backgroundColor: '#fff',
   },
   chatItemSelected: {
-    backgroundColor: '#eaf7d3',
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 12,
-    backgroundColor: '#e0e0e0',
-  },
-  clienteNombre: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    marginRight: 6,
-  },
-  ultimoMensaje: {
-    color: '#666',
-    fontSize: 14,
-    marginTop: 2,
-    maxWidth: 180,
-  },
-  dot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
     backgroundColor: '#4CAF50',
-    marginLeft: 4,
   },
-  chatContainer: {
+  chatItemName: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginRight: 5,
+  },
+  chatItemRole: {
+    fontSize: 16,
+  },
+  messagesContainer: {
     flex: 1,
-    padding: 10,
+    backgroundColor: '#fff',
+  },
+  chatHeader: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+  },
+  chatHeaderText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#999',
+    textAlign: 'center',
+  },
+  emptySubText: {
+    fontSize: 14,
+    color: '#bbb',
+    marginTop: 5,
   },
   messageBubble: {
-    padding: 10,
-    borderRadius: 12,
+    padding: 12,
+    borderRadius: 15,
     marginVertical: 4,
-    maxWidth: '80%',
-    alignSelf: 'flex-start',
+    maxWidth: '75%',
   },
   messageIn: {
-    backgroundColor: '#e0e0e0',
+    backgroundColor: '#e8e8e8',
     alignSelf: 'flex-start',
+    borderBottomLeftRadius: 4,
   },
   messageOut: {
-    backgroundColor: '#c0e6a0',
+    backgroundColor: '#4CAF50',
     alignSelf: 'flex-end',
+    borderBottomRightRadius: 4,
   },
   messageText: {
-    fontSize: 16,
+    fontSize: 15,
+    color: '#000',
   },
-  inputRow: {
+  messageTextOut: {
+    color: '#fff',
+  },
+  messageTime: {
+    fontSize: 11,
+    color: '#666',
+    marginTop: 4,
+    alignSelf: 'flex-end',
+  },
+  messageTimeOut: {
+    color: '#e8f5e9',
+  },
+  inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 8,
+    padding: 10,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
   },
   input: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#f5f5f5',
     borderRadius: 20,
-    paddingHorizontal: 16,
-    marginRight: 8,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    height: 40,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    marginRight: 10,
+    maxHeight: 100,
+    fontSize: 15,
+  },
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  sendButtonText: {
+    fontSize: 20,
+    color: '#fff',
+    fontWeight: 'bold',
   },
 });

@@ -60,8 +60,8 @@ export default function PedidosPendientesScreen() {
               <Text style={styles.nuevoPedido}>Nuevo Pedido #{pedido.id}</Text>
             </View>
             <Text style={styles.label}><Text style={styles.bold}>Cliente:</Text> {pedido.cliente}</Text>
-            <Text style={styles.label}><Text style={styles.bold}>Items:</Text> {pedido.items.map(i => `${i.cantidad} ${i.producto}`).join(', ')}</Text>
-            <Text style={styles.label}><Text style={styles.bold}>Total:</Text> ${pedido.total.toFixed(2)}</Text>
+            <Text style={styles.label}><Text style={styles.bold}>Items:</Text> {pedido.items?.map(i => `${i.cantidad} ${i.producto}`).join(', ') || 'Sin items'}</Text>
+            <Text style={styles.label}><Text style={styles.bold}>Total:</Text> ${parseFloat(pedido.total || 0).toFixed(2)}</Text>
             <View style={styles.btnRow}>
               <TouchableOpacity
                 style={[styles.btn, styles.aceptar]}

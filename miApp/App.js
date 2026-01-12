@@ -3,6 +3,8 @@ import { View, Text, Alert, ActivityIndicator } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AppProvider, useApp } from './src/context/AppContext';
+import { CarritoProvider } from './src/context/CarritoContext';
+import { NotificacionesProvider } from './src/context/NotificacionesContext';
 import AppNavigator from './src/navigation/AppNavigator';
 import { lightTheme, darkTheme } from './src/theme/theme';
 
@@ -85,7 +87,11 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AppProvider>
-        <AppContent />
+        <CarritoProvider>
+          <NotificacionesProvider>
+            <AppContent />
+          </NotificacionesProvider>
+        </CarritoProvider>
       </AppProvider>
     </SafeAreaProvider>
   );

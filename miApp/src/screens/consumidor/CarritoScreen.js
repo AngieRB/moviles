@@ -1,71 +1,60 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   View,
   FlatList,
   StyleSheet,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
-import { Card, Text, Button, Divider } from 'react-native-paper';
+import { Card, Text, Button, Divider, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useCarrito } from '../../context/CarritoContext';
 
 export default function CarritoScreen({ navigation }) {
-  const [items, setItems] = useState([
-    {
-      id: '1',
-      nombre: 'Tomates Frescos',
-      cantidad: 2,
-      precio: 2.50,
-      imagen: '🍅',
-      productor: 'Juan García',
-    },
-    {
-      id: '2',
-      nombre: 'Lechugas Orgánicas',
-      cantidad: 1,
-      precio: 1.80,
-      imagen: '🥬',
-      productor: 'María López',
-    },
-  ]);
+  const {
+    items,
+    loading,
+    subtotal,
+    envio,
+    total,
+    actualizarCantidad,
+    eliminarDelCarrito,
+  } = useCarrito();
 
-  const eliminarItem = (id) => {
-    Alert.alert(
-      'Eliminar producto',
-      '¿Deseas eliminar este producto del carrito?',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        {
-          text: 'Eliminar',
-          onPress: () => {
-            setItems(items.filter((item) => item.id !== id));
+  const confirmarEliminar = (id, nombre) => {
+    if (Platform.OS === 'web') {
+      if (window.confirm(`¿Deseas eliminar ${nombre} del carrito?`)) {
+        eliminarDelCarrito(id);
+      }
+    } else {
+      Alert.alert(
+        'Eliminar producto',
+        `¿Deseas eliminar ${nombre} del carrito?`,
+        [
+          { text: 'Cancelar', style: 'cancel' },
+          {
+            text: 'Eliminar',
+            onPress: () => eliminarDelCarrito(id),
+            style: 'destructive',
           },
-          style: 'destructive',
-        },
-      ]
-    );
+        ]
+      );
+    }
   };
 
-  const actualizarCantidad = (id, nuevaCantidad) => {
+  const handleActualizarCantidad = (id, nuevaCantidad, nombre) => {
     if (nuevaCantidad < 1) {
-      eliminarItem(id);
+      confirmarEliminar(id, nombre);
       return;
     }
-    setItems(
-      items.map((item) =>
-        item.id === id ? { ...item, cantidad: nuevaCantidad } : item
-      )
-    );
+    actualizarCantidad(id, nuevaCantidad);
   };
-
-  const subtotal = items.reduce((sum, item) => sum + item.precio * item.cantidad, 0);
-  const envio = subtotal > 20 ? 0 : 3.50;
-  const total = subtotal + envio;
 
   const renderItem = ({ item }) => (
     <Card style={styles.itemCard}>
       <View style={styles.itemContent}>
-        <Text style={styles.imagenProducto}>{item.imagen}</Text>
+        <Text style={styles.imagenProducto}>{item.imagen || '🛒'}</Text>
 
         <View style={styles.itemInfo}>
           <Text style={styles.itemNombre} numberOfLines={2}>
@@ -78,13 +67,13 @@ export default function CarritoScreen({ navigation }) {
         <View style={styles.itemControles}>
           <View style={styles.cantidadControl}>
             <TouchableOpacity
-              onPress={() => actualizarCantidad(item.id, item.cantidad - 1)}
+              onPress={() => handleActualizarCantidad(item.id, item.cantidad - 1, item.nombre)}
             >
               <MaterialCommunityIcons name="minus-circle" size={20} color="#4A90E2" />
             </TouchableOpacity>
             <Text style={styles.cantidadTexto}>{item.cantidad}</Text>
             <TouchableOpacity
-              onPress={() => actualizarCantidad(item.id, item.cantidad + 1)}
+              onPress={() => handleActualizarCantidad(item.id, item.cantidad + 1, item.nombre)}
             >
               <MaterialCommunityIcons name="plus-circle" size={20} color="#4A90E2" />
             </TouchableOpacity>
@@ -95,7 +84,7 @@ export default function CarritoScreen({ navigation }) {
               ${(item.precio * item.cantidad).toFixed(2)}
             </Text>
             <TouchableOpacity
-              onPress={() => eliminarItem(item.id)}
+              onPress={() => confirmarEliminar(item.id, item.nombre)}
               style={styles.btnEliminar}
             >
               <MaterialCommunityIcons name="trash-can" size={18} color="#E74C3C" />
@@ -106,19 +95,31 @@ export default function CarritoScreen({ navigation }) {
     </Card>
   );
 
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4A90E2" />
+        <Text style={styles.loadingText}>Cargando carrito...</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {items.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <MaterialCommunityIcons name="shopping-outline" size={64} color="#ccc" />
-          <Text style={styles.emptyTitle}>Carrito vacío</Text>
-          <Text style={styles.emptyText}>Agrega productos para continuar</Text>
+          <MaterialCommunityIcons name="cart-off" size={80} color="#ccc" />
+          <Text style={styles.emptyTitle}>Tu carrito está vacío</Text>
+          <Text style={styles.emptyText}>
+            Agrega productos desde el catálogo para comenzar a comprar
+          </Text>
           <Button
             mode="contained"
-            onPress={() => navigation.navigate('Productos')}
+            onPress={() => navigation.navigate('ProductosTab')}
             style={styles.btnIrComprar}
+            icon="shopping"
           >
-            Ir a comprar
+            Ver productos
           </Button>
         </View>
       ) : (
@@ -126,7 +127,7 @@ export default function CarritoScreen({ navigation }) {
           <FlatList
             data={items}
             renderItem={renderItem}
-            keyExtractor={(item) => item.id}
+            keyExtractor={(item) => item.id.toString()}
             contentContainerStyle={styles.listContainer}
           />
 
@@ -135,7 +136,9 @@ export default function CarritoScreen({ navigation }) {
             <Text style={styles.resumenTitulo}>Resumen de compra</Text>
 
             <View style={styles.resumenRow}>
-              <Text style={styles.resumenLabel}>Subtotal:</Text>
+              <Text style={styles.resumenLabel}>
+                Productos ({items.length}):
+              </Text>
               <Text style={styles.resumenValor}>
                 ${subtotal.toFixed(2)}
               </Text>
@@ -169,7 +172,7 @@ export default function CarritoScreen({ navigation }) {
             <View style={styles.buttonsContainer}>
               <Button
                 mode="outlined"
-                onPress={() => navigation.navigate('Productos')}
+                onPress={() => navigation.navigate('ProductosTab')}
                 style={styles.btnContinuar}
               >
                 Continuar comprando
@@ -177,21 +180,21 @@ export default function CarritoScreen({ navigation }) {
               <Button
                 mode="contained"
                 onPress={() => {
-                  Alert.alert(
-                    'Compra confirmada',
-                    'Tu pedido ha sido realizado. Te enviaremos un email con los detalles.',
-                    [
-                      {
-                        text: 'OK',
-                        onPress: () => {
-                          setItems([]);
-                        },
-                      },
-                    ]
-                  );
+                  navigation.navigate('Pago', {
+                    total: total,
+                    items: items.map(item => ({
+                      id: item.id,
+                      producto_id: item.producto_id || item.id,
+                      nombre: item.nombre,
+                      cantidad: item.cantidad,
+                      precio: item.precio,
+                    })),
+                    direccionEnvio: '',
+                  });
                 }}
                 style={styles.btnPagar}
                 labelStyle={styles.btnPagarLabel}
+                icon="credit-card"
               >
                 Proceder al pago
               </Button>
@@ -208,6 +211,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: '#666',
+  },
   listContainer: {
     padding: 12,
     paddingBottom: 20,
@@ -215,6 +228,7 @@ const styles = StyleSheet.create({
   itemCard: {
     marginBottom: 12,
     elevation: 2,
+    borderRadius: 12,
   },
   itemContent: {
     flexDirection: 'row',
@@ -276,30 +290,32 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 32,
   },
   emptyTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
-    marginTop: 16,
+    marginTop: 20,
   },
   emptyText: {
     fontSize: 14,
     color: '#999',
     marginTop: 8,
     marginBottom: 24,
+    textAlign: 'center',
   },
   btnIrComprar: {
     marginTop: 16,
     backgroundColor: '#4A90E2',
+    paddingHorizontal: 24,
   },
   resumenCard: {
     backgroundColor: '#fff',
     marginHorizontal: 12,
     marginBottom: 12,
     padding: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     elevation: 3,
   },
   resumenTitulo: {
@@ -357,7 +373,7 @@ const styles = StyleSheet.create({
     borderColor: '#4A90E2',
   },
   btnPagar: {
-    backgroundColor: '#4A90E2',
+    backgroundColor: '#27AE60',
   },
   btnPagarLabel: {
     fontSize: 14,

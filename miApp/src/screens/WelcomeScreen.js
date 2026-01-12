@@ -52,7 +52,7 @@ export default function WelcomeScreen({ navigation }) {
           contentStyle={styles.primaryButtonContent}
           labelStyle={styles.primaryButtonLabel}
         >
-          Registrarse
+          INICIAR SESSION
         </Button>
       </ScrollView>
     </View>

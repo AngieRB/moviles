@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   FlatList,
@@ -6,87 +6,62 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   RefreshControl,
+  Image,
+  Platform,
+  Alert,
 } from 'react-native';
 import { Card, Text, Searchbar, Chip } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import apiClient from '../../services/apiClient';
+import { useCarrito } from '../../context/CarritoContext';
 
-export default function ProductosScreen({ navigation }) {
+export default function ProductosScreen({ navigation, route }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('Todos');
-  const [loading, setLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(route.params?.categoriaFiltro || 'Todos');
+  const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [productos, setProductos] = useState([]);
+  const { agregarAlCarrito } = useCarrito();
 
-  // Datos de ejemplo - en producción vendrían de una API
-  const [productos] = useState([
-    {
-      id: '1',
-      name: 'Tomates Frescos',
-      categoria: 'Vegetales',
-      precio: 2.50,
-      calificacion: 4.5,
-      imagen: '🍅',
-      disponibles: 50,
-      productor: 'Juan García',
-    },
-    {
-      id: '2',
-      name: 'Lechugas Orgánicas',
-      categoria: 'Vegetales',
-      precio: 1.80,
-      calificacion: 4.8,
-      imagen: '🥬',
-      disponibles: 30,
-      productor: 'María López',
-    },
-    {
-      id: '3',
-      name: 'Manzanas Rojas',
-      categoria: 'Frutas',
-      precio: 3.20,
-      calificacion: 4.6,
-      imagen: '🍎',
-      disponibles: 75,
-      productor: 'Carlos Rodríguez',
-    },
-    {
-      id: '4',
-      name: 'Zanahorias',
-      categoria: 'Vegetales',
-      precio: 1.50,
-      calificacion: 4.4,
-      imagen: '🥕',
-      disponibles: 45,
-      productor: 'Ana Martínez',
-    },
-    {
-      id: '5',
-      name: 'Plátanos',
-      categoria: 'Frutas',
-      precio: 2.00,
-      calificacion: 4.7,
-      imagen: '🍌',
-      disponibles: 100,
-      productor: 'Pedro García',
-    },
-  ]);
+  useEffect(() => {
+    cargarProductos();
+  }, []);
 
-  const categorias = ['Todos', 'Vegetales', 'Frutas', 'Lácteos', 'Granos'];
+  useEffect(() => {
+    // Actualizar categoría si viene de los parámetros de navegación
+    if (route.params?.categoriaFiltro) {
+      setSelectedCategory(route.params.categoriaFiltro);
+    }
+  }, [route.params?.categoriaFiltro]);
+
+  const cargarProductos = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get('/productos');
+      setProductos(response.data.productos || response.data || []);
+    } catch (error) {
+      console.error('Error al cargar productos:', error);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    cargarProductos();
+  };
+
+  const categorias = ['Todos', 'Frutas', 'Verduras', 'Lácteos', 'Granos', 'Carnes', 'Otros'];
 
   const productosFiltrados = productos.filter((producto) => {
-    const matchSearch = producto.name
+    const matchSearch = producto.nombre
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const matchCategory =
       selectedCategory === 'Todos' || producto.categoria === selectedCategory;
     return matchSearch && matchCategory;
   });
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    setTimeout(() => {
-      setRefreshing(false);
-    }, 1500);
-  };
 
   const renderProducto = ({ item }) => (
     <TouchableOpacity
@@ -100,20 +75,23 @@ export default function ProductosScreen({ navigation }) {
           <Text style={styles.imagenProducto}>{item.imagen}</Text>
           <View style={styles.infoContainer}>
             <Text style={styles.nombreProducto} numberOfLines={2}>
-              {item.name}
+              {item.nombre}
             </Text>
-            <Text style={styles.productor}>{item.productor}</Text>
+            <Text style={styles.productor}>{item.productor?.nombre || 'Productor local'}</Text>
             <View style={styles.ratingContainer}>
               <MaterialCommunityIcons name="star" size={14} color="#FFD700" />
-              <Text style={styles.rating}>{item.calificacion}</Text>
+              <Text style={styles.rating}>{item.calificacion || 4.5}</Text>
               <Text style={styles.disponibles}>
                 ({item.disponibles} disponibles)
               </Text>
             </View>
           </View>
           <View style={styles.precioContainer}>
-            <Text style={styles.precio}>${item.precio.toFixed(2)}</Text>
-            <TouchableOpacity style={styles.addButton}>
+            <Text style={styles.precio}>${parseFloat(item.precio).toFixed(2)}</Text>
+            <TouchableOpacity 
+              style={styles.addButton}
+              onPress={() => agregarAlCarrito(item, 1)}
+            >
               <MaterialCommunityIcons name="plus-circle" size={32} color="#4A90E2" />
             </TouchableOpacity>
           </View>
@@ -121,6 +99,15 @@ export default function ProductosScreen({ navigation }) {
       </Card>
     </TouchableOpacity>
   );
+
+  if (loading && !refreshing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4A90E2" />
+        <Text style={styles.loadingText}>Cargando productos...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -132,27 +119,29 @@ export default function ProductosScreen({ navigation }) {
       />
 
       <FlatList
-        data={categorias}
-        renderItem={({ item }) => (
-          <Chip
-            selected={selectedCategory === item}
-            onPress={() => setSelectedCategory(item)}
-            style={[
-              styles.chip,
-              selectedCategory === item && styles.chipSelected,
-            ]}
-            textStyle={styles.chipText}
-          >
-            {item}
-          </Chip>
-        )}
-        keyExtractor={(item) => item}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.categoriesContainer}
-      />
+          data={categorias}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              style={[
+                styles.pill,
+                selectedCategory === item && styles.pillSelected,
+              ]}
+              onPress={() => setSelectedCategory(item)}
+              activeOpacity={0.7}
+            >
+              <Text style={selectedCategory === item ? styles.pillTextSelected : styles.pillText}>
+                {item}
+              </Text>
+            </TouchableOpacity>
+          )}
+          keyExtractor={(item) => item}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoriesContainer}
+          contentContainerStyle={styles.categoriesContainer}
+        />
 
-      {loading ? (
+      {loading && !refreshing ? (
         <ActivityIndicator
           size="large"
           color="#4A90E2"
@@ -188,23 +177,53 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
+  },
   searchbar: {
     margin: 12,
     elevation: 2,
   },
   categoriesContainer: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 0,
+    paddingVertical: 4,
+    marginBottom: 2,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+  },
+  pill: {
+    paddingHorizontal: 18,
     paddingVertical: 8,
-  },
-  chip: {
-    marginRight: 8,
+    borderRadius: 20,
     backgroundColor: '#fff',
+    marginRight: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    elevation: 2,
   },
-  chipSelected: {
+  pillSelected: {
     backgroundColor: '#4A90E2',
+    borderColor: '#4A90E2',
+    elevation: 4,
   },
-  chipText: {
+  pillText: {
     color: '#333',
+    fontWeight: '500',
+    fontSize: 15,
+  },
+  pillTextSelected: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 15,
   },
   listContainer: {
     paddingHorizontal: 12,

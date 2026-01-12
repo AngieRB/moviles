@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
+import { StyleSheet, View, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
 import { Text, Card, Avatar, TextInput, Button, IconButton, HelperText } from 'react-native-paper';
+import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '../../context/AppContext';
 
 // Pantalla de Perfil común para todos los usuarios
 export default function PerfilScreen() {
   const { user, updateUser } = useApp();
   const [editing, setEditing] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
   const [formData, setFormData] = useState({
     email: user?.email || 'productor@test.com',
     telefono: user?.telefono || '0987654321',
@@ -37,26 +39,106 @@ export default function PerfilScreen() {
     setEditing(false);
   };
 
+  const pickImage = async () => {
+    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    
+    if (!permissionResult.granted) {
+      Alert.alert('Permiso denegado', 'Necesitas dar permiso para acceder a las fotos');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setProfileImage(result.assets[0].uri);
+    }
+  };
+
+  const takePhoto = async () => {
+    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+    
+    if (!permissionResult.granted) {
+      Alert.alert('Permiso denegado', 'Necesitas dar permiso para usar la cámara');
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (!result.canceled) {
+      setProfileImage(result.assets[0].uri);
+    }
+  };
+
+  const showImageOptions = () => {
+    Alert.alert(
+      'Seleccionar foto de perfil',
+      'Elige una opción',
+      [
+        { text: 'Tomar foto', onPress: takePhoto },
+        { text: 'Elegir de galería', onPress: pickImage },
+        { text: 'Cancelar', style: 'cancel' },
+      ]
+    );
+  };
+
   return (
     <ScrollView style={styles.container}>
       <Card style={styles.headerCard}>
         <Card.Content style={styles.headerContent}>
-          <Avatar.Icon size={100} icon="leaf" style={styles.avatar} />
-          <Text style={styles.userName}>{user?.nombre || 'Juan Pérez'}</Text>
-          <Text style={styles.userRole}>Productor Verificado</Text>
-          <Text style={styles.userFinca}>Finca El Paraíso - Manabí</Text>
+          <TouchableOpacity onPress={showImageOptions} style={styles.avatarContainer}>
+            {profileImage ? (
+              <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : (
+              <Avatar.Icon size={100} icon="leaf" style={styles.avatar} />
+            )}
+            <View style={styles.cameraIconContainer}>
+              <IconButton icon="camera" size={24} iconColor="#fff" style={styles.cameraIcon} />
+            </View>
+          </TouchableOpacity>
+          <Text style={styles.userName}>
+            {user?.nombre || user?.name || 'Usuario'} {user?.apellido || ''}
+          </Text>
+          <Text style={styles.userRole}>
+            {user?.role === 'productor' ? '🌾 Productor Verificado' : '🛒 Consumidor'}
+          </Text>
+          {user?.role === 'productor' && user?.role_data?.nombreFinca && (
+            <Text style={styles.userFinca}>
+              {user.role_data.nombreFinca} - {user.role_data.ubicacion || 'Ecuador'}
+            </Text>
+          )}
+          {user?.role === 'consumidor' && user?.role_data?.direccion && (
+            <Text style={styles.userFinca}>{user.role_data.direccion}</Text>
+          )}
         </Card.Content>
       </Card>
 
+      {/* Mostrar información de la finca solo si es productor */}
+      {user?.role === 'productor' && (
+        <View style={styles.sectionContainer}>
+          <Card style={styles.card}>
+            <Card.Content>
+              <Text style={styles.sectionTitle}>Resumen de la Finca</Text>
+              <Text style={styles.infoText}>
+                Ubicación: {user?.role_data?.ubicacion || fincaData.ubicacion}
+              </Text>
+              <Text style={styles.infoText}>
+                Tipo de productos: {user?.role_data?.tipoProductos || 'Productos agrícolas'}
+              </Text>
+            </Card.Content>
+          </Card>
+        </View>
+      )}
+
       <View style={styles.sectionContainer}>
-        <Card style={styles.card}>
-          <Card.Content>
-            <Text style={styles.sectionTitle}>Resumen de la Finca</Text>
-            <Text style={styles.infoText}>Ubicación: {fincaData.ubicacion}</Text>
-            <Text style={styles.infoText}>Área: {fincaData.area}</Text>
-            <Text style={styles.infoText}>Experiencia: {fincaData.experiencia}</Text>
-          </Card.Content>
-        </Card>
 
         <Card style={styles.card}>
           <Card.Content>
@@ -119,8 +201,30 @@ const styles = StyleSheet.create({
   headerContent: {
     alignItems: 'center',
   },
+  avatarContainer: {
+    position: 'relative',
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
   avatar: {
     backgroundColor: '#6B9B37',
+  },
+  cameraIconContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: '#6B9B37',
+    borderRadius: 20,
+    width: 36,
+    height: 36,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cameraIcon: {
+    margin: 0,
   },
   userName: {
     fontSize: 24,

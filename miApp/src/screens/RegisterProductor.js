@@ -4,6 +4,7 @@ import * as Location from 'expo-location';
 import { Modal, TouchableOpacity } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { StyleSheet, View, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
+import apiClient from '../services/apiClient';
 import { Text, TextInput, Button, Checkbox, IconButton, HelperText } from 'react-native-paper';
 import { StatusBar } from 'expo-status-bar';
 import { roleColors } from '../theme/theme';
@@ -73,21 +74,40 @@ export default function RegisterProductor({ route, navigation }) {
   };
 
   const handleImageOption = async (option) => {
-    let result;
-    if (option === 'camera') {
-      result = await ImagePicker.launchCameraAsync({
-        mediaTypes: ImagePicker.MediaType.IMAGE,
-        allowsEditing: true,
-        quality: 0.7,
-      });
-    } else if (option === 'gallery') {
-      result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaType.IMAGE,
-        allowsEditing: true,
-        quality: 0.7,
-      });
-    }
     setImageModalVisible(false);
+    
+    let result;
+    try {
+      if (option === 'camera') {
+        // Solicitar permiso de cámara
+        const { status } = await ImagePicker.requestCameraPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Se necesita permiso para acceder a la cámara');
+          return;
+        }
+        result = await ImagePicker.launchCameraAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          quality: 0.7,
+        });
+      } else if (option === 'gallery') {
+        // Solicitar permiso de galería
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          alert('Se necesita permiso para acceder a la galería');
+          return;
+        }
+        result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ['images'],
+          allowsEditing: true,
+          quality: 0.7,
+        });
+      }
+    } catch (error) {
+      console.error('Error al seleccionar imagen:', error);
+      alert('Error al acceder a la cámara/galería');
+      return;
+    }
     if (result && !result.canceled && result.assets && result.assets.length > 0) {
       updateFormData(imageField, result.assets[0].uri);
     }
@@ -156,11 +176,36 @@ export default function RegisterProductor({ route, navigation }) {
   const handleRegister = async () => {
     if (!validateStep()) return;
     setLoading(true);
-    setTimeout(() => {
+    try {
+      // Preparar datos para el backend
+      const payload = {
+        name: formData.name,
+        cedula: formData.cedula,
+        telefono: formData.telefono,
+        email: formData.email,
+        password: formData.password,
+        password_confirmation: formData.confirmPassword,
+        nombreFinca: formData.nombreFinca,
+        ubicacionGPS: formData.ubicacionGPS,
+        tipoCultivos: formData.tipoCultivos,
+        experiencia: formData.experiencia,
+        areaCultivo: formData.areaCultivo,
+        fotoCedula: formData.fotoCedula,
+        fotoFinca: formData.fotoFinca,
+      };
+      const response = await apiClient.post('/register-productor', payload);
       setLoading(false);
       alert('¡Cuenta creada exitosamente!');
       navigation.navigate('Login', { role });
-    }, 1500);
+    } catch (error) {
+      setLoading(false);
+      let msg = 'Error al registrar. Intenta nuevamente.';
+      if (error.response && error.response.data && error.response.data.errors) {
+        const errors = error.response.data.errors;
+        msg = Object.values(errors).flat().join('\n');
+      }
+      alert(msg);
+    }
   };
 
   // ...existing code...
@@ -281,6 +326,12 @@ export default function RegisterProductor({ route, navigation }) {
                     <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 16 }}>Selecciona una opción</Text>
                     <Button mode="contained" style={{ backgroundColor: roleColors.productor.primary, borderRadius: 20, marginBottom: 12, minWidth: 180 }} onPress={() => handleImageOption('camera')}>Tomar foto</Button>
                     <Button mode="contained" style={{ backgroundColor: roleColors.productor.primary, borderRadius: 20, minWidth: 180 }} onPress={() => handleImageOption('gallery')}>Seleccionar de galería</Button>
+                    {/* Botón de Confirmar imagen si ya hay una imagen seleccionada */}
+                    {formData[imageField] && (
+                      <Button mode="contained" style={{ backgroundColor: roleColors.productor.primary, borderRadius: 20, marginTop: 16, minWidth: 180 }} onPress={() => setImageModalVisible(false)}>
+                        Confirmar imagen
+                      </Button>
+                    )}
                     <Button mode="text" style={{ marginTop: 16 }} onPress={() => setImageModalVisible(false)}>Cancelar</Button>
                   </View>
                 </View>
@@ -308,8 +359,11 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingBottom: 8,
+    minHeight: '100%',
   },
   header: {
     flexDirection: 'row',
@@ -351,6 +405,8 @@ const styles = StyleSheet.create({
   },
   form: {
     width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
   },
   input: {
     marginBottom: 8,

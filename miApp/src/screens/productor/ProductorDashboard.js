@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
-import { Text, TextInput, Button, Card, Avatar, IconButton, Modal, Portal } from 'react-native-paper';
+import { View, StyleSheet, ScrollView, Alert, Modal, Image, Dimensions, Platform, KeyboardAvoidingView, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { Text, TextInput, Button, Card, Avatar, IconButton, Portal, Badge } from 'react-native-paper';
+import { Picker } from '@react-native-picker/picker';
 import * as ImagePicker from 'expo-image-picker';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
-import InicioScreen from './InicioScreen';
+import InicioProductorScreen from './InicioProductorScreen';
 import PedidosPendientesScreen from './PedidosPendientesScreen';
 import ChatClientesScreen from './ChatClientesScreen';
 import PerfilScreen from '../common/PerfilScreen';
+import apiClient from '../../services/apiClient';
+import { useNotificaciones } from '../../context/NotificacionesContext';
 
 
 const Tab = createBottomTabNavigator();
@@ -16,6 +19,7 @@ const Tab = createBottomTabNavigator();
 
 export default function ProductorDashboard() {
   const theme = useTheme();
+  const { mensajesNoLeidos } = useNotificaciones();
 
   return (
     <Tab.Navigator
@@ -49,7 +53,7 @@ export default function ProductorDashboard() {
     >
       <Tab.Screen
         name="Inicio"
-        component={InicioScreen}
+        component={InicioProductorScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Icon name="home" size={size} color={color} />
@@ -82,7 +86,22 @@ export default function ProductorDashboard() {
         component={ChatClientesScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="message" size={size} color={color} />
+            <View>
+              <Icon name="message" size={size} color={color} />
+              {mensajesNoLeidos > 0 && (
+                <Badge
+                  size={16}
+                  style={{
+                    position: 'absolute',
+                    top: -5,
+                    right: -10,
+                    backgroundColor: '#FF3B30',
+                  }}
+                >
+                  {mensajesNoLeidos > 99 ? '99+' : mensajesNoLeidos}
+                </Badge>
+              )}
+            </View>
           ),
           headerTitle: 'Chat con Clientes',
         }}
@@ -105,91 +124,240 @@ function ProductosScreen() {
   const [productos, setProductos] = useState([]);
   const [productoEditable, setProductoEditable] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [nuevoProducto, setNuevoProducto] = useState({
     nombre: '',
     descripcion: '',
     cantidad: '',
     precio: '',
-    unidad: '',
+    categoria: 'Verduras',
     foto: null,
   });
 
-  const validateText = (text) => /^[a-zA-Z\s]+$/.test(text);
-  const validatePrice = (price) => /^\d+(,\d{1,2})?$/.test(price);
+  const CATEGORIAS = ['Frutas', 'Verduras', 'Lácteos', 'Granos', 'Carnes', 'Otros'];
 
- 
-  const agregarProducto = () => {
-    if (
-      validateText(nuevoProducto.nombre) &&
-      validateText(nuevoProducto.descripcion) &&
-      nuevoProducto.cantidad.trim() &&
-      validatePrice(nuevoProducto.precio)
-    ) {
-      const nuevoProductoConUnidad = {
-        nombre: nuevoProducto.nombre,
-        descripcion: nuevoProducto.descripcion,
-        cantidad: parseInt(nuevoProducto.cantidad, 10),
-        precio: parseFloat(nuevoProducto.precio.replace(',', '.')),
-        unidad: nuevoProducto.unidad || 'unidad',
-        foto: nuevoProducto.foto,
-      };
+  // Cargar productos al iniciar
+  useEffect(() => {
+    cargarProductos();
+  }, []);
 
-      // Emitir evento de Pusher
-      
-      setNuevoProducto({ nombre: '', descripcion: '', cantidad: '', precio: '', unidad: '', foto: null });
-      setModalVisible(false);
-    } else {
-      alert('Por favor, complete los campos correctamente. Solo se permiten letras en nombre y descripción.');
+  const cargarProductos = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get('/mis-productos');
+      console.log('📦 Productos cargados:', response.data);
+      setProductos(response.data.productos || []);
+    } catch (error) {
+      console.error('❌ Error al cargar productos:', error);
+      Alert.alert('Error', 'No se pudieron cargar los productos');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const editarProducto = () => {
-    if (
-      validateText(productoEditable.nombre) &&
-      validateText(productoEditable.descripcion) &&
-      productoEditable.cantidad.trim() &&
-      validatePrice(productoEditable.precio)
-    ) {
-      const productoEditadoConUnidad = {
-        ...productoEditable,
-        cantidad: parseInt(productoEditable.cantidad, 10),
-        precio: parseFloat(productoEditable.precio.replace(',', '.')),
+  const validateText = (text) => /^[a-zA-Z\sáéíóúÁÉÍÓÚñÑ]+$/.test(text);
+  const validatePrice = (price) => /^\d+(\.\d{1,2})?$/.test(price);
+
+  const agregarProducto = async () => {
+    console.log('🚀 Agregando producto desde ProductorDashboard');
+    
+    if (!nuevoProducto.nombre.trim()) {
+      Alert.alert('Error', 'El nombre del producto es obligatorio');
+      return;
+    }
+    if (!nuevoProducto.precio || parseFloat(nuevoProducto.precio) <= 0) {
+      Alert.alert('Error', 'El precio debe ser mayor a 0');
+      return;
+    }
+    if (!nuevoProducto.cantidad || parseInt(nuevoProducto.cantidad) < 0) {
+      Alert.alert('Error', 'La cantidad disponible es obligatoria');
+      return;
+    }
+
+    try {
+      const productoData = {
+        nombre: nuevoProducto.nombre.trim(),
+        descripcion: nuevoProducto.descripcion.trim() || '',
+        precio: parseFloat(nuevoProducto.precio),
+        categoria: nuevoProducto.categoria || 'Otros',
+        disponibles: parseInt(nuevoProducto.cantidad),
+        imagen: '🌾',
       };
 
-     
+      console.log('📦 Enviando producto:', productoData);
+      const response = await apiClient.post('/productos', productoData);
+      
+      console.log('✅ Producto creado:', response.data);
+      
+      // Recargar la lista de productos desde el servidor
+      await cargarProductos();
+      
+      // Limpiar formulario
+      setNuevoProducto({ nombre: '', descripcion: '', cantidad: '', precio: '', categoria: 'Verduras', foto: null });
+      setModalVisible(false);
+      
+      Alert.alert('Éxito', 'Nuevo producto guardado con éxito');
+    } catch (error) {
+      console.error('❌ Error al crear producto:', error);
+      const mensaje = error.response?.data?.message || 'Error al crear el producto';
+      Alert.alert('Error', mensaje);
+    }
+  };
+
+  const editarProducto = async () => {
+    if (!productoEditable.nombre.trim()) {
+      Alert.alert('Error', 'El nombre del producto es obligatorio');
+      return;
+    }
+    if (!productoEditable.precio || parseFloat(productoEditable.precio) <= 0) {
+      Alert.alert('Error', 'El precio debe ser mayor a 0');
+      return;
+    }
+    if (!productoEditable.disponibles && !productoEditable.cantidad) {
+      Alert.alert('Error', 'La cantidad disponible es obligatoria');
+      return;
+    }
+
+    try {
+      const productoData = {
+        nombre: productoEditable.nombre.trim(),
+        descripcion: productoEditable.descripcion?.trim() || '',
+        precio: parseFloat(productoEditable.precio),
+        categoria: productoEditable.categoria || 'Otros',
+        disponibles: parseInt(productoEditable.disponibles || productoEditable.cantidad || 0),
+      };
+
+      console.log('📝 Actualizando producto:', productoEditable.id, productoData);
+      await apiClient.put(`/productos/${productoEditable.id}`, productoData);
+      
+      console.log('✅ Producto actualizado');
+      await cargarProductos();
+      
       setProductoEditable(null);
       setModalVisible(false);
-    } else {
-      alert('Por favor, complete los campos correctamente. Solo se permiten letras en nombre y descripción.');
+      
+      Alert.alert('Éxito', 'Producto actualizado con éxito');
+    } catch (error) {
+      console.error('❌ Error al actualizar producto:', error);
+      const mensaje = error.response?.data?.message || 'Error al actualizar el producto';
+      Alert.alert('Error', mensaje);
     }
+  };
+
+  const eliminarProducto = async (productoId) => {
+    Alert.alert(
+      'Confirmar eliminación',
+      '¿Estás seguro de que deseas eliminar este producto?',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        {
+          text: 'Eliminar',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              console.log('🗑️ Eliminando producto:', productoId);
+              await apiClient.delete(`/productos/${productoId}`);
+              
+              Alert.alert('Éxito', 'Producto eliminado exitosamente');
+              await cargarProductos();
+            } catch (error) {
+              console.error('❌ Error al eliminar producto:', error);
+              const mensaje = error.response?.data?.message || 'No se pudo eliminar el producto';
+              Alert.alert('Error', mensaje);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const agregarFoto = async (setProducto) => {
-    const options = [
-      { text: 'Tomar Foto con la Cámara', onPress: async () => {
-        const result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
-          quality: 1,
-        });
-        if (!result.canceled) {
-          setProducto((prev) => ({ ...prev, foto: result.uri }));
+    // Para web, usar input de archivo
+    if (Platform.OS === 'web') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            setProducto((prev) => ({ 
+              ...prev, 
+              foto: reader.result,
+              imagenFile: file
+            }));
+          };
+          reader.readAsDataURL(file);
         }
-      }},
-      { text: 'Seleccionar Foto de la Galería', onPress: async () => {
-        const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: true,
-          quality: 1,
-        });
-        if (!result.canceled) {
-          setProducto((prev) => ({ ...prev, foto: result.uri }));
-        }
-      }},
-      { text: 'Cancelar', style: 'cancel' },
-    ];
+      };
+      
+      input.click();
+      return;
+    }
 
-    Alert.alert('Agregar Foto', 'Seleccione una opción:', options);
+    // Para móvil nativo - pedir permisos primero
+    const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+    const { status: galleryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    Alert.alert(
+      'Agregar Foto',
+      'Selecciona una opción',
+      [
+        {
+          text: 'Tomar Foto',
+          onPress: async () => {
+            if (cameraStatus !== 'granted') {
+              Alert.alert('Permiso denegado', 'Necesitas dar permiso para usar la cámara');
+              return;
+            }
+            
+            try {
+              const result = await ImagePicker.launchCameraAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.7,
+              });
+              
+              if (!result.canceled && result.assets && result.assets[0]) {
+                setProducto((prev) => ({ ...prev, foto: result.assets[0].uri }));
+              }
+            } catch (error) {
+              console.error('Error al tomar foto:', error);
+              Alert.alert('Error', 'No se pudo tomar la foto');
+            }
+          },
+        },
+        {
+          text: 'Galería',
+          onPress: async () => {
+            if (galleryStatus !== 'granted') {
+              Alert.alert('Permiso denegado', 'Necesitas dar permiso para acceder a la galería');
+              return;
+            }
+            
+            try {
+              const result = await ImagePicker.launchImageLibraryAsync({
+                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                allowsEditing: true,
+                aspect: [1, 1],
+                quality: 0.7,
+              });
+              
+              if (!result.canceled && result.assets && result.assets[0]) {
+                setProducto((prev) => ({ ...prev, foto: result.assets[0].uri }));
+              }
+            } catch (error) {
+              console.error('Error al seleccionar imagen:', error);
+              Alert.alert('Error', 'No se pudo seleccionar la imagen');
+            }
+          },
+        },
+        { text: 'Cancelar', style: 'cancel' },
+      ]
+    );
   };
 
   return (
@@ -197,7 +365,7 @@ function ProductosScreen() {
       <Button
         mode="contained"
         onPress={() => {
-          setNuevoProducto({ nombre: '', descripcion: '', cantidad: '', precio: '', unidad: '', foto: null });
+          setNuevoProducto({ nombre: '', descripcion: '', cantidad: '', precio: '', categoria: 'Verduras', foto: null });
           setModalVisible(true);
         }}
         style={styles.addButtonTop}
@@ -206,39 +374,69 @@ function ProductosScreen() {
       </Button>
 
       <Text style={styles.title}>Lista de Productos</Text>
-      {productos.map((producto) => (
-        <Card key={producto.id} style={styles.card}>
-          <Card.Content>
-            <View style={styles.productRow}>
-              {producto.foto ? (
-                <Avatar.Image size={40} source={{ uri: producto.foto }} style={styles.avatar} />
-              ) : (
-                <Avatar.Icon size={40} icon="basket" style={styles.avatar} />
-              )}
-              <View style={styles.productInfo}>
-                <Text style={styles.productName}>{producto.nombre}</Text>
-                <Text style={styles.productDescription}>{producto.descripcion}</Text>
-                <Text style={styles.productDetails}>Cantidad Disponible: {producto.cantidad}</Text>
-                <Text style={styles.productDetails}>Precio por Unidad: ${producto.precio.toFixed(2)}</Text>
+      {loading ? (
+        <Text style={{textAlign: 'center', marginTop: 20}}>Cargando productos...</Text>
+      ) : productos.length === 0 ? (
+        <Text style={{textAlign: 'center', marginTop: 20}}>No tienes productos aún</Text>
+      ) : (
+        productos.map((producto) => (
+          <Card key={producto.id} style={styles.card}>
+            <Card.Content>
+              <View style={styles.productRow}>
+                {producto.foto ? (
+                  <Avatar.Image size={40} source={{ uri: producto.foto }} style={styles.avatar} />
+                ) : (
+                  <Avatar.Icon size={40} icon="basket" style={styles.avatar} />
+                )}
+                <View style={styles.productInfo}>
+                  <Text style={styles.productName}>{producto.nombre}</Text>
+                  <Text style={styles.productDescription}>{producto.descripcion}</Text>
+                  <Text style={styles.productDetails}>Stock: {producto.disponibles}</Text>
+                  <Text style={styles.productDetails}>Precio: ${producto.precio}</Text>
+                  <Text style={styles.productDetails}>Categoría: {producto.categoria}</Text>
+                </View>
+                <View style={{ flexDirection: 'row' }}>
+                  <IconButton
+                    icon="pencil"
+                    size={20}
+                    onPress={() => {
+                      setProductoEditable(producto);
+                      setModalVisible(true);
+                    }}
+                    style={styles.editButton}
+                  />
+                  <IconButton
+                    icon="delete"
+                    size={20}
+                    iconColor="#d32f2f"
+                    onPress={() => eliminarProducto(producto.id)}
+                    style={styles.deleteButton}
+                  />
+                </View>
               </View>
-              <IconButton
-                icon="pencil"
-                size={20}
-                onPress={() => {
-                  setProductoEditable(producto);
-                  setModalVisible(true);
-                }}
-                style={styles.editButton}
-              />
-            </View>
-          </Card.Content>
-        </Card>
-      ))}
+            </Card.Content>
+          </Card>
+        ))
+      )}
 
-      <Portal>
-        <Modal visible={modalVisible} onDismiss={() => setModalVisible(false)}>
-          <View style={styles.modalContent}>
-            <Text style={styles.title}>{productoEditable ? 'Editar Producto' : 'Agregar Nuevo Producto'}</Text>
+      <Modal 
+        visible={modalVisible} 
+        onRequestClose={() => setModalVisible(false)}
+        transparent={true}
+        animationType="slide"
+      >
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.modalOverlay}
+        >
+          <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <ScrollView 
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  <Text style={styles.title}>{productoEditable ? 'Editar Producto' : 'Agregar Nuevo Producto'}</Text>
             <TextInput
               label="Nombre del Producto"
               value={productoEditable ? productoEditable.nombre : nuevoProducto.nombre}
@@ -263,10 +461,10 @@ function ProductosScreen() {
             />
             <TextInput
               label="Cantidad Disponible"
-              value={productoEditable ? productoEditable.cantidad.toString() : nuevoProducto.cantidad}
+              value={productoEditable ? (productoEditable.disponibles || productoEditable.cantidad || '').toString() : nuevoProducto.cantidad}
               onChangeText={(text) =>
                 productoEditable
-                  ? setProductoEditable((prev) => ({ ...prev, cantidad: text.replace(/[^0-9]/g, '') }))
+                  ? setProductoEditable((prev) => ({ ...prev, cantidad: text.replace(/[^0-9]/g, ''), disponibles: text.replace(/[^0-9]/g, '') }))
                   : setNuevoProducto((prev) => ({ ...prev, cantidad: text.replace(/[^0-9]/g, '') }))
               }
               mode="outlined"
@@ -275,7 +473,7 @@ function ProductosScreen() {
             />
             <TextInput
               label="Precio por Unidad ($)"
-              value={productoEditable ? productoEditable.precio.toString() : nuevoProducto.precio}
+              value={productoEditable ? (productoEditable.precio || '').toString() : nuevoProducto.precio}
               onChangeText={(text) =>
                 productoEditable
                   ? setProductoEditable((prev) => ({ ...prev, precio: text.replace(/[^0-9.]/g, '') }))
@@ -285,23 +483,40 @@ function ProductosScreen() {
               style={styles.input}
               keyboardType="numeric"
             />
-            <TextInput
-              label="Unidad (ej. kg, unidad, litros)"
-              value={productoEditable ? productoEditable.unidad : nuevoProducto.unidad}
-              onChangeText={(text) =>
-                productoEditable
-                  ? setProductoEditable((prev) => ({ ...prev, unidad: text }))
-                  : setNuevoProducto((prev) => ({ ...prev, unidad: text }))
-              }
-              mode="outlined"
-              style={styles.input}
-            />
+            
+            <Text style={styles.label}>Categoría</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={productoEditable ? productoEditable.categoria : nuevoProducto.categoria}
+                onValueChange={(itemValue) =>
+                  productoEditable
+                    ? setProductoEditable((prev) => ({ ...prev, categoria: itemValue }))
+                    : setNuevoProducto((prev) => ({ ...prev, categoria: itemValue }))
+                }
+                style={styles.picker}
+              >
+                {CATEGORIAS.map((cat) => (
+                  <Picker.Item key={cat} label={cat} value={cat} />
+                ))}
+              </Picker>
+            </View>
+
+            {(productoEditable?.foto || nuevoProducto.foto) && (
+              <View style={styles.imagePreview}>
+                <Text style={styles.label}>Imagen seleccionada:</Text>
+                <Image 
+                  source={{ uri: productoEditable?.foto || nuevoProducto.foto }} 
+                  style={styles.previewImage}
+                />
+              </View>
+            )}
+
             <Button
               mode="outlined"
               onPress={() => agregarFoto(productoEditable ? setProductoEditable : setNuevoProducto)}
               style={styles.photoButton}
             >
-              Agregar Foto
+              {(productoEditable?.foto || nuevoProducto.foto) ? 'Cambiar Foto' : 'Agregar Foto'}
             </Button>
             <Button
               mode="contained"
@@ -310,21 +525,26 @@ function ProductosScreen() {
             >
               {productoEditable ? 'Guardar Cambios' : 'Guardar Producto'}
             </Button>
-          </View>
-        </Modal>
-      </Portal>
+                </ScrollView>
+              </View>
+            </View>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
+      </Modal>
     </ScrollView>
   );
 }
 
+const { width, height } = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
+    padding: width < 768 ? 15 : 20,
     backgroundColor: '#f5f5f5',
   },
   title: {
-    fontSize: 18,
+    fontSize: width < 768 ? 16 : 18,
     fontWeight: 'bold',
     marginBottom: 10,
   },
@@ -356,8 +576,27 @@ const styles = StyleSheet.create({
   editButton: {
     alignSelf: 'flex-end',
   },
+  deleteButton: {
+    alignSelf: 'flex-end',
+  },
   input: {
     marginBottom: 10,
+  },
+  label: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
+    marginTop: 5,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 4,
+    marginBottom: 10,
+    backgroundColor: '#fff',
+  },
+  picker: {
+    height: 50,
   },
   addButton: {
     marginTop: 10,
@@ -365,12 +604,32 @@ const styles = StyleSheet.create({
   addButtonTop: {
     marginBottom: 20,
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalContent: {
     backgroundColor: 'white',
-    padding: 20,
+    padding: width < 768 ? 15 : 20,
     borderRadius: 10,
+    width: width < 768 ? width * 0.95 : width * 0.9,
+    maxWidth: 500,
+    maxHeight: height * 0.85,
   },
   photoButton: {
     marginBottom: 10,
+  },
+  imagePreview: {
+    marginVertical: 10,
+    alignItems: 'center',
+  },
+  previewImage: {
+    width: width < 768 ? width * 0.6 : 200,
+    height: width < 768 ? width * 0.6 : 200,
+    borderRadius: 10,
+    marginTop: 10,
+    resizeMode: 'cover',
   },
 });

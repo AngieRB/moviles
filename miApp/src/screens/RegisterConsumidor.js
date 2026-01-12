@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
 import { StyleSheet, View, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { Text, TextInput, Button, HelperText } from 'react-native-paper';
 import { roleColors } from '../theme/theme';
@@ -6,6 +7,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 export default function RegisterConsumidor({ navigation }) {
   const role = 'consumidor';
+  const [imageModalVisible, setImageModalVisible] = useState(false);
+  const [profilePhoto, setProfilePhoto] = useState(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -14,7 +17,50 @@ export default function RegisterConsumidor({ navigation }) {
     email: '',
     password: '',
     confirmPassword: '',
+    profilePhoto: null,
   });
+    // Lógica para seleccionar imagen de perfil
+    const pickProfilePhoto = () => {
+      setImageModalVisible(true);
+    };
+
+    const handleImageOption = async (option) => {
+      setImageModalVisible(false);
+      let result;
+      try {
+        if (option === 'camera') {
+          const { status } = await ImagePicker.requestCameraPermissionsAsync();
+          if (status !== 'granted') {
+            alert('Se necesita permiso para acceder a la cámara');
+            return;
+          }
+          result = await ImagePicker.launchCameraAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            quality: 0.7,
+          });
+        } else if (option === 'gallery') {
+          const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+          if (status !== 'granted') {
+            alert('Se necesita permiso para acceder a la galería');
+            return;
+          }
+          result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            allowsEditing: true,
+            quality: 0.7,
+          });
+        }
+      } catch (error) {
+        console.error('Error al seleccionar imagen:', error);
+        alert('Error al acceder a la cámara/galería');
+        return;
+      }
+      if (result && !result.canceled && result.assets && result.assets.length > 0) {
+        setProfilePhoto(result.assets[0].uri);
+        setFormData(prev => ({ ...prev, profilePhoto: result.assets[0].uri }));
+      }
+    };
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
@@ -43,6 +89,9 @@ export default function RegisterConsumidor({ navigation }) {
     }
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Las contraseñas no coinciden';
+    }
+    if (!formData.profilePhoto) {
+      newErrors.profilePhoto = 'La foto de perfil es requerida';
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -73,6 +122,29 @@ export default function RegisterConsumidor({ navigation }) {
 
         <Text variant="headlineMedium" style={styles.title}>Registro Consumidor</Text>
         <View style={styles.form}>
+          <Text style={{ marginBottom: 8, fontWeight: 'bold' }}>Foto de perfil (requerida)</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+            <Button mode="contained" style={{ backgroundColor: roleColors[role].primary, borderRadius: 20 }} onPress={pickProfilePhoto}>Subir Foto</Button>
+            <Text style={{ marginLeft: 8 }}>{formData.profilePhoto ? 'Imagen seleccionada' : 'Seleccione archivo...'}</Text>
+          </View>
+          {errors.profilePhoto && <HelperText type="error">{errors.profilePhoto}</HelperText>}
+                {/* Modal para seleccionar imagen de perfil */}
+                <RNModal visible={imageModalVisible} transparent animationType="fade" onRequestClose={() => setImageModalVisible(false)}>
+                  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.3)' }}>
+                    <View style={{ backgroundColor: 'white', padding: 24, borderRadius: 16, width: '80%', alignItems: 'center' }}>
+                      <Text style={{ fontWeight: 'bold', fontSize: 18, marginBottom: 16 }}>Selecciona una opción</Text>
+                      <Button mode="contained" style={{ backgroundColor: roleColors[role].primary, borderRadius: 20, marginBottom: 12, minWidth: 180 }} onPress={() => handleImageOption('camera')}>Tomar foto</Button>
+                      <Button mode="contained" style={{ backgroundColor: roleColors[role].primary, borderRadius: 20, minWidth: 180 }} onPress={() => handleImageOption('gallery')}>Seleccionar de galería</Button>
+                      {/* Botón de Confirmar imagen si ya hay una imagen seleccionada */}
+                      {formData.profilePhoto && (
+                        <Button mode="contained" style={{ backgroundColor: roleColors[role].primary, borderRadius: 20, marginTop: 16, minWidth: 180 }} onPress={() => setImageModalVisible(false)}>
+                          Confirmar imagen
+                        </Button>
+                      )}
+                      <Button mode="text" style={{ marginTop: 16 }} onPress={() => setImageModalVisible(false)}>Cancelar</Button>
+                    </View>
+                  </View>
+                </RNModal>
           <TextInput label="Nombre Completo" value={formData.name} onChangeText={text => updateFormData('name', text)} mode="outlined" style={styles.input} outlineColor={roleColors[role].primary} activeOutlineColor={roleColors[role].primary} error={!!errors.name} />
           {errors.name && <HelperText type="error">{errors.name}</HelperText>}
           <TextInput label="Cédula" value={formData.cedula} onChangeText={text => updateFormData('cedula', text)} mode="outlined" style={styles.input} outlineColor={roleColors[role].primary} activeOutlineColor={roleColors[role].primary} error={!!errors.cedula} />
@@ -99,6 +171,8 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingHorizontal: 24,
     paddingBottom: 40,
   },
@@ -125,6 +199,8 @@ const styles = StyleSheet.create({
   },
   form: {
     width: '100%',
+    maxWidth: 400,
+    alignSelf: 'center',
   },
   input: {
     marginBottom: 8,

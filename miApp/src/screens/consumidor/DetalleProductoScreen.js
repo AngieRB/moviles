@@ -14,6 +14,14 @@ export default function DetalleProductoScreen({ route, navigation }) {
   const [cantidad, setCantidad] = useState(1);
 
   const agregarAlCarrito = () => {
+    if (cantidad > producto.disponibles) {
+      Alert.alert(
+        'Stock insuficiente',
+        `Solo hay ${producto.disponibles} unidades disponibles de este producto.`
+      );
+      return;
+    }
+
     Alert.alert(
       'Éxito',
       `${cantidad} ${cantidad === 1 ? 'unidad' : 'unidades'} de ${producto.name} agregadas al carrito`,
@@ -34,6 +42,11 @@ export default function DetalleProductoScreen({ route, navigation }) {
   const aumentarCantidad = () => {
     if (cantidad < producto.disponibles) {
       setCantidad(cantidad + 1);
+    } else {
+      Alert.alert(
+        'Stock máximo',
+        `Solo hay ${producto.disponibles} unidades disponibles.`
+      );
     }
   };
 
