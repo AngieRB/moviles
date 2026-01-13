@@ -25,7 +25,7 @@ export const NotificacionesProvider = ({ children }) => {
 
     try {
       const response = await apiClient.get('/chats/no-leidos');
-      const cantidad = response.data.total || 0;
+      const cantidad = response.data.no_leidos || response.data.total || 0;
       setMensajesNoLeidos(cantidad);
     } catch (error) {
       // No imprimimos errores para no ensuciar la consola
@@ -33,9 +33,15 @@ export const NotificacionesProvider = ({ children }) => {
   }, [isAuthenticated, user]);
 
   // EFECTO ÚNICO: Solo se ejecuta al entrar a la app.
-  // ALERTA: ¡Aquí ya NO hay setInterval!
   useEffect(() => {
     cargarMensajesNoLeidos();
+    
+    // Actualizar contador cada 3 segundos
+    const interval = setInterval(() => {
+      cargarMensajesNoLeidos();
+    }, 3000);
+    
+    return () => clearInterval(interval);
   }, [cargarMensajesNoLeidos]);
 
   const marcarMensajesLeidos = async (chatId) => {

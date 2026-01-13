@@ -8,7 +8,7 @@ import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import InicioProductorScreen from './InicioProductorScreen';
 import PedidosPendientesScreen from './PedidosPendientesScreen';
-import ChatClientesScreen from './ChatClientesScreen';
+import ConversacionesClientesScreen from './ConversacionesClientesScreen';
 import PerfilScreen from '../common/PerfilScreen';
 import apiClient from '../../services/apiClient';
 import { useNotificaciones } from '../../context/NotificacionesContext';
@@ -83,7 +83,7 @@ export default function ProductorDashboard() {
       />
       <Tab.Screen
         name="ChatClientes"
-        component={ChatClientesScreen}
+        component={ConversacionesClientesScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
             <View>

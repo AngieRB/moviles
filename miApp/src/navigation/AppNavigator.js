@@ -21,6 +21,8 @@ import ConfiguracionScreen from '../screens/common/ConfiguracionScreen';
 import ProducerHomeScreen from '../screens/ProducerHomeScreen';
 import AddProductScreen from '../screens/AddProductScreen';
 import ProducerProfileScreen from '../screens/ProducerProfileScreen';
+import ChatIndividualClienteScreen from '../screens/productor/ChatIndividualClienteScreen';
+import ChatIndividualProductorScreen from '../screens/consumidor/ChatIndividualProductorScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -84,6 +86,7 @@ export default function AppNavigator() {
                 <Stack.Screen name="ProducerHome" component={ProducerHomeScreen} />
                 <Stack.Screen name="AddProduct" component={AddProductScreen} />
                 <Stack.Screen name="ProducerProfile" component={ProducerProfileScreen} />
+                <Stack.Screen name="ChatIndividualCliente" component={ChatIndividualClienteScreen} />
               </>
             )}
 
@@ -91,6 +94,7 @@ export default function AppNavigator() {
             {user?.role === 'consumidor' && (
               <>
                 <Stack.Screen name="ConsumidorDashboard" component={ConsumidorDashboard} />
+                <Stack.Screen name="ChatIndividualProductor" component={ChatIndividualProductorScreen} />
               </>
             )}
 

@@ -20,6 +20,20 @@ export default function ChatProductoresScreen({ navigation }) {
   // Cargar productores disponibles y chats existentes
   useEffect(() => {
     cargarDatos();
+    // Limpiar selección al salir de la pantalla
+    return () => {
+      setSelectedChat(null);
+      setMensajes([]);
+    };
+  }, []);
+
+  // Actualizar chats cada 3 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      cargarChatsActualizados();
+    }, 3000);
+    
+    return () => clearInterval(interval);
   }, []);
 
   const cargarDatos = async () => {
@@ -39,6 +53,26 @@ export default function ChatProductoresScreen({ navigation }) {
       Alert.alert('Error', 'No se pudieron cargar los datos');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const cargarChatsActualizados = async () => {
+    try {
+      const resChats = await apiClient.get('/chats');
+      const nuevosChats = resChats.data.chats || [];
+      
+      // Siempre actualizar los chats para refrescar último mensaje
+      setChats(nuevosChats);
+      
+      // Si hay un chat seleccionado, actualizar su referencia
+      if (selectedChat) {
+        const chatActualizado = nuevosChats.find(c => c.id === selectedChat.id);
+        if (chatActualizado) {
+          setSelectedChat(chatActualizado);
+        }
+      }
+    } catch (error) {
+      console.error('Error al actualizar chats:', error);
     }
   };
 
@@ -71,19 +105,25 @@ export default function ChatProductoresScreen({ navigation }) {
   const cargarMensajes = async (chatId) => {
     try {
       const response = await apiClient.get(`/chats/${chatId}/mensajes`);
-      setMensajes(response.data.mensajes || []);
+      const mensajesCargados = response.data.mensajes || [];
+      setMensajes(mensajesCargados);
       
       // Marcar mensajes como leídos
       await marcarMensajesLeidos(chatId);
       
-      // Auto-scroll al final
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: false });
-      }, 100);
     } catch (error) {
       console.error('Error al cargar mensajes:', error);
     }
   };
+
+  // Scroll al final cuando cambian los mensajes
+  useEffect(() => {
+    if (mensajes.length > 0) {
+      setTimeout(() => {
+        flatListRef.current?.scrollToEnd({ animated: false });
+      }, 300);
+    }
+  }, [mensajes.length]);
 
   const iniciarChatConProductor = async (productor) => {
     try {
@@ -136,6 +176,17 @@ export default function ChatProductoresScreen({ navigation }) {
       const nuevoMensaje = response.data.mensaje;
       setMensajes(prev => [...prev, nuevoMensaje]);
       
+      // Actualizar el último mensaje en la lista de chats
+      setChats(prev => prev.map(chat => 
+        chat.id === selectedChat.id 
+          ? { 
+              ...chat, 
+              ultimo_mensaje: mensajeTexto,
+              ultimo_mensaje_at: new Date().toISOString()
+            }
+          : chat
+      ));
+      
       // Auto-scroll al final
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
@@ -179,18 +230,31 @@ export default function ChatProductoresScreen({ navigation }) {
         <Text style={styles.chatNombre}>
           {item.otro_usuario?.nombre || 'Usuario'}
         </Text>
-        <Text style={styles.chatUltimoMensaje} numberOfLines={1}>
+        <Text style={[
+          styles.chatUltimoMensaje,
+          item.mensajes_no_leidos > 0 && styles.chatMensajeNoLeido
+        ]} numberOfLines={1}>
           {item.ultimo_mensaje || 'Sin mensajes'}
         </Text>
       </View>
-      {item.ultimo_mensaje_at && (
-        <Text style={styles.chatFecha}>
-          {new Date(item.ultimo_mensaje_at).toLocaleDateString('es-ES', {
-            day: '2-digit',
-            month: '2-digit'
-          })}
-        </Text>
-      )}
+      <View style={styles.chatMeta}>
+        {item.ultimo_mensaje_at && (
+          <Text style={[
+            styles.chatFecha,
+            item.mensajes_no_leidos > 0 && styles.chatFechaNoLeida
+          ]}>
+            {new Date(item.ultimo_mensaje_at).toLocaleTimeString('es-ES', {
+              hour: '2-digit',
+              minute: '2-digit'
+            })}
+          </Text>
+        )}
+        {item.mensajes_no_leidos > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{item.mensajes_no_leidos}</Text>
+          </View>
+        )}
+      </View>
     </TouchableOpacity>
   );
 
@@ -211,15 +275,6 @@ export default function ChatProductoresScreen({ navigation }) {
             esMio ? styles.textoMio : styles.textoOtro
           ]}>
             {item.mensaje}
-          </Text>
-          <Text style={[
-            styles.mensajeHora,
-            esMio ? styles.horaMia : styles.horaOtra
-          ]}>
-            {new Date(item.created_at).toLocaleTimeString('es-ES', {
-              hour: '2-digit',
-              minute: '2-digit'
-            })}
           </Text>
         </View>
       </View>
@@ -403,14 +458,43 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#333',
   },
+  chatNombreNoLeido: {
+    fontWeight: 'bold',
+  },
   chatUltimoMensaje: {
     fontSize: 14,
     color: '#666',
     marginTop: 2,
   },
+  chatMensajeNoLeido: {
+    fontWeight: 'bold',
+    color: '#000',
+  },
+  chatMeta: {
+    alignItems: 'flex-end',
+  },
   chatFecha: {
     fontSize: 12,
     color: '#999',
+  },
+  chatFechaNoLeida: {
+    color: '#4CAF50',
+    fontWeight: '600',
+  },
+  badge: {
+    backgroundColor: '#FF5252',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    marginTop: 4,
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
   },
   mensajesList: {
     flex: 1,

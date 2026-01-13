@@ -16,6 +16,7 @@ import PagoScreen from './PagoScreen';
 import MisPedidosScreen from './MisPedidosScreen';
 import DetallePedidoScreen from './DetallePedidoScreen';
 import ChatProductoresScreen from './ChatProductoresScreen';
+import ConversacionesProductoresScreen from './ConversacionesProductoresScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -200,7 +201,7 @@ export default function ConsumidorDashboard() {
 
       <Tab.Screen
         name="ChatTab"
-        component={ChatProductoresScreen}
+        component={ConversacionesProductoresScreen}
         options={{
           tabBarIcon: ({ color, size, focused }) => (
             <View>
