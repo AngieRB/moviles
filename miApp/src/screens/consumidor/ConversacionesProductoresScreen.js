@@ -44,7 +44,7 @@ export default function ConversacionesProductoresScreen() {
       console.log('🟡 Iniciando cargarChats...');
       setLoading(true);
       console.log('🟡 Llamando a /chats...');
-      const response = await apiClient.get('/chats');
+      const response = await apiClient.get('/chats', { timeout: 8000 });
       console.log('🟡 Respuesta /chats recibida');
       const chatsObtenidos = response.data.chats || [];
       setChats(chatsObtenidos);
@@ -52,7 +52,7 @@ export default function ConversacionesProductoresScreen() {
       
       // Cargar productores disponibles
       console.log('🔵 Cargando productores...');
-      const resProductores = await apiClient.get('/usuarios?role=productor');
+      const resProductores = await apiClient.get('/usuarios?role=productor', { timeout: 8000 });
       console.log('✅ Respuesta productores:', resProductores.data);
       const todosProductores = resProductores.data.usuarios || resProductores.data || [];
       console.log('✅ Total productores recibidos:', todosProductores.length);
@@ -60,10 +60,13 @@ export default function ConversacionesProductoresScreen() {
       setProductores(todosProductores);
       console.log('✅ Estado productores actualizado');
     } catch (error) {
-      console.error('Error al cargar chats:', error);
+      if (error.code === 'ECONNABORTED') {
+        console.log('⚠️ Timeout al cargar datos (8s)');
+      } else {
+        console.log('Error al cargar chats');
+      }
       if (error.response) {
-        console.error('Error response data:', error.response.data);
-        console.error('Error status:', error.response.status);
+        console.log('Error status:', error.response.status);
         
         if (error.response.status === 401) {
           Alert.alert(
@@ -82,13 +85,13 @@ export default function ConversacionesProductoresScreen() {
 
   const actualizarChatsSilencioso = async () => {
     try {
-      const response = await apiClient.get('/chats');
+      const response = await apiClient.get('/chats', { timeout: 5000 });
       setChats(response.data.chats || []);
     } catch (error) {
-      console.error('Error al actualizar chats:', error);
-      // Si es 401, no mostramos alerta porque ya se manejó en cargarChats
-      if (error.response?.status !== 401) {
-        console.error('Error actualizando chats:', error.message);
+      // Manejo silencioso - no mostrar errores de timeout o red
+      // Solo logear si es un error diferente a timeout/red
+      if (error.code !== 'ECONNABORTED' && error.code !== 'ERR_NETWORK' && error.response?.status !== 401) {
+        console.log('Error actualizando chats (no crítico)');
       }
     }
   };
@@ -111,7 +114,7 @@ export default function ConversacionesProductoresScreen() {
       }
 
       // Si no existe, crear uno nuevo
-      const response = await apiClient.post('/chats/get-or-create', {
+      const response = await apiClient.post('/chats', {
         otro_usuario_id: productor.id
       });
 

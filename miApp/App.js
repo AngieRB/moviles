@@ -20,9 +20,14 @@ try {
   pusherClient = new Pusher('dc5b6a1aad26978b963c', {
     cluster: 'us2',
     forceTLS: true,
+    // Aumentar timeouts para evitar errores 4201
+    activityTimeout: 30000,  // 30 segundos (default: 120000)
+    pongTimeout: 30000,      // 30 segundos (default: 30000)
+    // Reducir reintentos agresivos
+    enabledTransports: ['ws', 'wss'],
   });
 } catch (error) {
-  console.error("Error iniciando Pusher:", error);
+  console.log("Pusher no disponible (modo offline)");
 }
 
 function AppContent() {
@@ -45,9 +50,11 @@ function AppContent() {
     });
 
     pusherClient.connection.bind('error', (err) => {
-        console.log("❌ Error de conexión:", err);
-        // Si es error de red, no te asustes, reintentará solo
-        setStatus("⚠️ Reintentando conexión...");
+        // Solo logear errores críticos (no timeouts normales)
+        if (err.error?.data?.code !== 4201) {
+          console.log("⚠️ Pusher: reintentando conexión");
+        }
+        setStatus("🟡 Modo offline (funcionalidad básica)");
     });
 
     // B. SUSCRIBIRSE AL CANAL

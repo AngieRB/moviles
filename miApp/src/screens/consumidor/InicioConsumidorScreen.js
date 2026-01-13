@@ -47,8 +47,8 @@ export default function InicioConsumidorScreen() {
     try {
       setLoading(true);
       
-      // Cargar productos
-      const resProductos = await apiClient.get('/productos');
+      // Cargar productos con timeout de 8 segundos
+      const resProductos = await apiClient.get('/productos', { timeout: 8000 });
       const productosData = resProductos.data.productos || resProductos.data || [];
       setProductos(productosData);
 
@@ -63,7 +63,10 @@ export default function InicioConsumidorScreen() {
       });
 
     } catch (error) {
-      console.error('Error al cargar datos:', error);
+      // Solo logear si no es timeout
+      if (error.code !== 'ECONNABORTED') {
+        console.log('Error al cargar productos');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);

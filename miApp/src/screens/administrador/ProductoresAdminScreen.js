@@ -2,10 +2,13 @@ import React, { useState, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, RefreshControl, Alert, Platform, Linking } from 'react-native';
 import { Card, Text, Button, Chip, Searchbar, ActivityIndicator, Portal, Dialog, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import apiClient from '../../services/apiClient';
+import { useApp } from '../../context/AppContext';
 
 export default function ProductoresAdminScreen() {
+  const navigation = useNavigation();
+  const { logout } = useApp();
   const [productores, setProductores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -19,21 +22,56 @@ export default function ProductoresAdminScreen() {
   useFocusEffect(
     useCallback(() => {
       cargarProductores();
+      
+      // Auto-refresh cada 10 segundos para ver nuevos productores
+      const interval = setInterval(() => {
+        cargarProductoresSilencioso();
+      }, 10000);
+      
+      return () => clearInterval(interval);
     }, [])
   );
 
   const cargarProductores = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/usuarios?role=productor');
+      const response = await apiClient.get('/usuarios?role=productor', { timeout: 8000 });
       const data = response.data.usuarios || response.data || [];
       setProductores(data);
     } catch (error) {
-      console.error('Error cargando productores:', error);
-      mostrarAlerta('Error', 'No se pudieron cargar los productores');
+      // Si es error 401, cerrar sesión automáticamente
+      if (error.response?.status === 401) {
+        mostrarAlerta('Sesión expirada', 'Tu sesión ha expirado. Por favor inicia sesión nuevamente.');
+        await logout();
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
+        return;
+      }
+      
+      // Para otros errores
+      if (error.code !== 'ECONNABORTED') {
+        console.log('Error cargando productores');
+        mostrarAlerta('Error', 'No se pudieron cargar los productores. Verifica tu conexión.');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);
+    }
+  };
+
+  // Cargar productores sin mostrar loading (para auto-refresh)
+  const cargarProductoresSilencioso = async () => {
+    try {
+      const response = await apiClient.get('/usuarios?role=productor', { timeout: 5000 });
+      const data = response.data.usuarios || response.data || [];
+      setProductores(data);
+    } catch (error) {
+      // Silencioso - no mostrar errores en auto-refresh
+      if (error.code !== 'ECONNABORTED') {
+        console.log('Error en auto-refresh (no crítico)');
+      }
     }
   };
 

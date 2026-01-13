@@ -98,7 +98,7 @@ export default function DetalleProductoScreen({ route, navigation }) {
         <View style={styles.precioSection}>
           <View>
             <Text style={styles.precioLabel}>Precio unitario</Text>
-            <Text style={styles.precio}>${producto.precio.toFixed(2)}</Text>
+            <Text style={styles.precio}>${(parseFloat(producto.precio) || 0).toFixed(2)}</Text>
           </View>
         </View>
 

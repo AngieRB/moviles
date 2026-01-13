@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // IMPORTANTE: Cambia esta IP por la IP de tu servidor Laravel
 // IP local de la máquina: 192.168.90.15
-export const API_URL = "http://192.168.90.15:8000/api";
+export const API_URL = "http://10.82.19.83:8000/api";
 /**
  * Cliente HTTP centralizado con axios
  * Maneja automáticamente la autenticación con tokens
@@ -23,7 +23,8 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem("token");
-    console.log('API Request:', config.method?.toUpperCase(), config.url, 'Token:', token ? 'Sí (' + token.substring(0, 20) + '...)' : 'NO');
+    // Log solo en desarrollo si es necesario
+    // console.log('API Request:', config.method?.toUpperCase(), config.url);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }

@@ -41,16 +41,19 @@ export default function ChatProductoresScreen({ navigation }) {
       setLoading(true);
       
       // Cargar productores disponibles
-      const resProductores = await apiClient.get('/usuarios?role=productor');
+      const resProductores = await apiClient.get('/usuarios?role=productor', { timeout: 8000 });
       setProductores(resProductores.data.usuarios || resProductores.data || []);
 
       // Cargar chats existentes del usuario
-      const resChats = await apiClient.get('/chats');
+      const resChats = await apiClient.get('/chats', { timeout: 8000 });
       setChats(resChats.data.chats || []);
       
     } catch (error) {
-      console.error('Error al cargar datos:', error);
-      Alert.alert('Error', 'No se pudieron cargar los datos');
+      // Solo mostrar error si no es timeout
+      if (error.code !== 'ECONNABORTED') {
+        console.log('Error al cargar datos');
+        Alert.alert('Error', 'No se pudieron cargar los datos. Intenta de nuevo.');
+      }
     } finally {
       setLoading(false);
     }
@@ -58,7 +61,7 @@ export default function ChatProductoresScreen({ navigation }) {
 
   const cargarChatsActualizados = async () => {
     try {
-      const resChats = await apiClient.get('/chats');
+      const resChats = await apiClient.get('/chats', { timeout: 5000 });
       const nuevosChats = resChats.data.chats || [];
       
       // Siempre actualizar los chats para refrescar último mensaje
@@ -72,7 +75,10 @@ export default function ChatProductoresScreen({ navigation }) {
         }
       }
     } catch (error) {
-      console.error('Error al actualizar chats:', error);
+      // Manejo silencioso - no mostrar errores de timeout o red
+      if (error.code !== 'ECONNABORTED' && error.code !== 'ERR_NETWORK') {
+        console.log('Error actualizando chats (no crítico)');
+      }
     }
   };
 

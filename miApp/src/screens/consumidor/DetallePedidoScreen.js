@@ -17,31 +17,49 @@ export default function DetallePedidoScreen({ route, navigation }) {
   const [pedido, setPedido] = useState(pedidoInicial);
   const [confirmando, setConfirmando] = useState(false);
   const [dialogVisible, setDialogVisible] = useState(false);
+  const [detalles, setDetalles] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [direccion, setDireccion] = useState('N/A');
+  const [telefono, setTelefono] = useState('N/A');
 
-  // Datos detallados del pedido
-  const detalles = [
-    {
-      id: '1',
-      nombre: 'Tomates Frescos',
-      cantidad: 2,
-      precio: 2.50,
-      subtotal: 5.00,
-    },
-    {
-      id: '2',
-      nombre: 'Lechuga Orgánica',
-      cantidad: 1,
-      precio: 1.80,
-      subtotal: 1.80,
-    },
-    {
-      id: '3',
-      nombre: 'Zanahorias',
-      cantidad: 3,
-      precio: 1.50,
-      subtotal: 4.50,
-    },
-  ];
+  // Cargar detalles completos del pedido
+  React.useEffect(() => {
+    cargarDetallesPedido();
+  }, []);
+
+  const cargarDetallesPedido = async () => {
+    try {
+      setCargando(true);
+      const pedidoId = pedidoInicial.idReal || pedidoInicial.id;
+      const response = await apiClient.get(`/pedidos/${pedidoId}`, { timeout: 8000 });
+      const pedidoCompleto = response.data.pedido || response.data;
+      
+      console.log('Pedido completo:', pedidoCompleto);
+      
+      // Actualizar pedido con datos completos
+      setPedido({
+        ...pedidoInicial,
+        ...pedidoCompleto,
+      });
+      
+      // Extraer items/detalles
+      const items = pedidoCompleto.items || pedidoCompleto.detalles || [];
+      setDetalles(items);
+      
+      // Extraer dirección y teléfono del usuario
+      if (pedidoCompleto.user || pedidoCompleto.consumidor) {
+        const usuario = pedidoCompleto.user || pedidoCompleto.consumidor;
+        setDireccion(usuario.role_data?.direccion || usuario.direccion || 'N/A');
+        setTelefono(usuario.telefono || 'N/A');
+      }
+    } catch (error) {
+      console.log('Error cargando detalles del pedido');
+      // Si falla, usar datos del pedido inicial
+      setDetalles([]);
+    } finally {
+      setCargando(false);
+    }
+  };
 
   const getEstadoColor = (estado) => {
     const estadoLower = estado?.toLowerCase();
@@ -270,7 +288,7 @@ export default function DetallePedidoScreen({ route, navigation }) {
           <View style={styles.infoTexto}>
             <Text style={styles.infoLabel}>Dirección de entrega</Text>
             <Text style={styles.infoValor}>
-              Calle Principal 123, Apartamento 5B
+              {direccion}
             </Text>
           </View>
         </View>
@@ -281,7 +299,7 @@ export default function DetallePedidoScreen({ route, navigation }) {
           <MaterialCommunityIcons name="phone" size={20} color="#4A90E2" />
           <View style={styles.infoTexto}>
             <Text style={styles.infoLabel}>Contacto</Text>
-            <Text style={styles.infoValor}>+1 234 567 8900</Text>
+            <Text style={styles.infoValor}>{telefono}</Text>
           </View>
         </View>
       </Card>
@@ -291,30 +309,54 @@ export default function DetallePedidoScreen({ route, navigation }) {
         <Text style={styles.productosTitle}>Productos</Text>
         <Divider style={styles.divider} />
 
-        {detalles.map((item, index) => (
-          <View key={item.id}>
-            <View style={styles.productoRow}>
-              <View style={styles.productoInfo}>
-                <Text style={styles.productoNombre}>{item.nombre}</Text>
-                <Text style={styles.productoCantidad}>
-                  {item.cantidad} x ${item.precio.toFixed(2)}
-                </Text>
-              </View>
-              <Text style={styles.productoSubtotal}>
-                ${item.subtotal.toFixed(2)}
-              </Text>
-            </View>
-            {index < detalles.length - 1 && (
-              <Divider style={styles.dividerProducto} />
-            )}
+        {cargando ? (
+          <View style={{ padding: 20, alignItems: 'center' }}>
+            <ActivityIndicator size="small" color="#4A90E2" />
+            <Text style={{ marginTop: 8, color: '#999' }}>Cargando detalles...</Text>
           </View>
-        ))}
+        ) : detalles.length > 0 ? (
+          detalles.map((item, index) => {
+            const nombre = item.producto?.nombre || item.nombre || 'Producto';
+            const cantidad = item.cantidad || 1;
+            const precio = parseFloat(item.precio || item.producto?.precio || 0);
+            const subtotal = cantidad * precio;
+            
+            return (
+              <View key={item.id || index}>
+                <View style={styles.productoRow}>
+                  <View style={styles.productoInfo}>
+                    <Text style={styles.productoNombre}>{nombre}</Text>
+                    <Text style={styles.productoCantidad}>
+                      {cantidad} x ${precio.toFixed(2)}
+                    </Text>
+                  </View>
+                  <Text style={styles.productoSubtotal}>
+                    ${subtotal.toFixed(2)}
+                  </Text>
+                </View>
+                {index < detalles.length - 1 && (
+                  <Divider style={styles.dividerProducto} />
+                )}
+              </View>
+            );
+          })
+        ) : (
+          <Text style={{ padding: 16, textAlign: 'center', color: '#999' }}>
+            No hay productos en este pedido
+          </Text>
+        )}
 
         <Divider style={styles.divider} />
 
         <View style={styles.resumenRow}>
           <Text style={styles.resumenLabel}>Subtotal</Text>
-          <Text style={styles.resumenValor}>$13.30</Text>
+          <Text style={styles.resumenValor}>
+            ${detalles.reduce((sum, item) => {
+              const cantidad = item.cantidad || 1;
+              const precio = parseFloat(item.precio || item.producto?.precio || 0);
+              return sum + (cantidad * precio);
+            }, 0).toFixed(2)}
+          </Text>
         </View>
 
         <View style={styles.resumenRow}>
@@ -326,7 +368,9 @@ export default function DetallePedidoScreen({ route, navigation }) {
 
         <View style={styles.resumenRow}>
           <Text style={styles.totalLabel}>Total</Text>
-          <Text style={styles.totalValor}>${pedido.total.toFixed(2)}</Text>
+          <Text style={styles.totalValor}>
+            ${(parseFloat(pedido.total) || 0).toFixed(2)}
+          </Text>
         </View>
       </Card>
 

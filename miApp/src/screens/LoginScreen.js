@@ -54,6 +54,8 @@ export default function LoginScreen({ route, navigation }) {
         email,
         password,
         role,
+      }, {
+        timeout: 10000 // 10 segundos para login
       });
       
       console.log('✅ Login exitoso:', data);
@@ -62,8 +64,8 @@ export default function LoginScreen({ route, navigation }) {
       await login(data.user, data.token);
       
     } catch (error) {
-      // Silenciar el error técnico en consola, mostrar mensaje amigable
-      console.log('Login fallido - verificar conexión al servidor');
+      // Manejo silencioso del error técnico
+      console.log('⚠️ Login fallido');
       
       if (error.response) {
         // El servidor respondió con un código de error

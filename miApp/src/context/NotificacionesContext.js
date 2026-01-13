@@ -24,24 +24,39 @@ export const NotificacionesProvider = ({ children }) => {
     if (!isAuthenticated || !user || user.role === 'administrador') return;
 
     try {
-      const response = await apiClient.get('/chats/no-leidos');
+      // Usar un timeout más corto para esta petición (5 segundos)
+      const response = await apiClient.get('/chats/no-leidos', {
+        timeout: 5000
+      });
       const cantidad = response.data.no_leidos || response.data.total || 0;
       setMensajesNoLeidos(cantidad);
     } catch (error) {
-      // No imprimimos errores para no ensuciar la consola
+      // Manejo silencioso de errores - no afecta la funcionalidad
+      // Si hay timeout o error de red, simplemente mantenemos el contador anterior
+      if (error.code === 'ECONNABORTED' || error.code === 'ERR_NETWORK') {
+        // No hacer nada, mantener el valor actual
+      } else {
+        console.log('Error al cargar mensajes no leídos (no crítico)');
+      }
     }
   }, [isAuthenticated, user]);
 
   // EFECTO ÚNICO: Solo se ejecuta al entrar a la app.
   useEffect(() => {
-    cargarMensajesNoLeidos();
+    // Pequeño delay inicial para que la app cargue primero
+    const initialTimeout = setTimeout(() => {
+      cargarMensajesNoLeidos();
+    }, 1000);
     
-    // Actualizar contador cada 3 segundos
+    // Actualizar contador cada 5 segundos (reducido de 3 para dar más tiempo)
     const interval = setInterval(() => {
       cargarMensajesNoLeidos();
-    }, 3000);
+    }, 5000);
     
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(initialTimeout);
+      clearInterval(interval);
+    };
   }, [cargarMensajesNoLeidos]);
 
   const marcarMensajesLeidos = async (chatId) => {

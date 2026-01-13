@@ -23,10 +23,12 @@ const InicioScreen = () => {
   const cargarProductos = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/mis-productos');
+      const response = await apiClient.get('/mis-productos', { timeout: 12000 });
       setProductos(response.data.productos || []);
     } catch (error) {
-      console.error('Error al cargar productos:', error);
+      if (error.code !== 'ECONNABORTED') {
+        console.log('Error al cargar productos');
+      }
     } finally {
       setLoading(false);
       setRefreshing(false);

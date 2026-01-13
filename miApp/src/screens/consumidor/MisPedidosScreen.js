@@ -22,7 +22,7 @@ export default function MisPedidosScreen({ navigation }) {
   const cargarPedidos = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/mis-pedidos');
+      const response = await apiClient.get('/mis-pedidos', { timeout: 8000 });
       const pedidosData = response.data.pedidos || response.data || [];
       
       console.log('Pedidos recibidos:', pedidosData);
@@ -40,7 +40,9 @@ export default function MisPedidosScreen({ navigation }) {
       
       setPedidos(pedidosFormateados);
     } catch (error) {
-      console.error('Error al cargar pedidos:', error);
+      if (error.code !== 'ECONNABORTED') {
+        console.log('Error al cargar pedidos');
+      }
     } finally {
       setLoading(false);
     }
@@ -146,7 +148,7 @@ export default function MisPedidosScreen({ navigation }) {
         </View>
       ) : pedidos.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <MaterialCommunityIcons name="package-outline" size={64} color="#ccc" />
+          <MaterialCommunityIcons name="package-variant-closed" size={64} color="#ccc" />
           <Text style={styles.emptyTitle}>Sin pedidos</Text>
           <Text style={styles.emptyText}>Aún no has realizado pedidos</Text>
         </View>

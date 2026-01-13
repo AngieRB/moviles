@@ -51,10 +51,13 @@ export default function ConversacionesClientesScreen() {
 
   const actualizarChatsSilencioso = async () => {
     try {
-      const response = await apiClient.get('/chats');
+      const response = await apiClient.get('/chats', { timeout: 5000 });
       setChats(response.data.chats || []);
     } catch (error) {
-      console.error('Error al actualizar chats:', error);
+      // Manejo silencioso - no mostrar errores de timeout o red
+      if (error.code !== 'ECONNABORTED' && error.code !== 'ERR_NETWORK') {
+        console.log('Error actualizando chats (no crítico)');
+      }
     }
   };
 

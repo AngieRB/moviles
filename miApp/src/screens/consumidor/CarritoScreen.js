@@ -61,7 +61,7 @@ export default function CarritoScreen({ navigation }) {
             {item.nombre}
           </Text>
           <Text style={styles.itemProductor}>{item.productor}</Text>
-          <Text style={styles.itemPrecio}>${item.precio.toFixed(2)} c/u</Text>
+          <Text style={styles.itemPrecio}>${(parseFloat(item.precio) || 0).toFixed(2)} c/u</Text>
         </View>
 
         <View style={styles.itemControles}>
@@ -81,7 +81,7 @@ export default function CarritoScreen({ navigation }) {
 
           <View style={styles.itemTotal}>
             <Text style={styles.itemTotalTexto}>
-              ${(item.precio * item.cantidad).toFixed(2)}
+              ${((parseFloat(item.precio) || 0) * item.cantidad).toFixed(2)}
             </Text>
             <TouchableOpacity
               onPress={() => confirmarEliminar(item.id, item.nombre)}

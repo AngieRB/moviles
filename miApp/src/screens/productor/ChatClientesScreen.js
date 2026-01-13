@@ -34,7 +34,7 @@ export default function ChatClientesScreen() {
   const cargarChats = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/chats');
+      const response = await apiClient.get('/chats', { timeout: 8000 });
       setChats(response.data.chats || []);
       
       // Si hay chats, seleccionar el primero automáticamente
@@ -42,8 +42,10 @@ export default function ChatClientesScreen() {
         seleccionarChat(response.data.chats[0]);
       }
     } catch (error) {
-      console.error('Error al cargar chats:', error);
-      Alert.alert('Error', 'No se pudieron cargar los chats');
+      if (error.code !== 'ECONNABORTED') {
+        console.log('Error al cargar chats');
+        Alert.alert('Error', 'No se pudieron cargar los chats');
+      }
     } finally {
       setLoading(false);
     }

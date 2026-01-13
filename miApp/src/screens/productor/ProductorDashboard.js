@@ -125,6 +125,7 @@ function ProductosScreen() {
   const [productoEditable, setProductoEditable] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [guardando, setGuardando] = useState(false); // Nuevo estado para prevenir doble envío
   const [nuevoProducto, setNuevoProducto] = useState({
     nombre: '',
     descripcion: '',
@@ -159,6 +160,12 @@ function ProductosScreen() {
   const validatePrice = (price) => /^\d+(\.\d{1,2})?$/.test(price);
 
   const agregarProducto = async () => {
+    // Prevenir doble envío
+    if (guardando) {
+      console.log('⚠️ Ya se está guardando el producto');
+      return;
+    }
+    
     console.log('🚀 Agregando producto desde ProductorDashboard');
     
     if (!nuevoProducto.nombre.trim()) {
@@ -175,6 +182,7 @@ function ProductosScreen() {
     }
 
     try {
+      setGuardando(true); // Activar indicador de guardado
       const productoData = {
         nombre: nuevoProducto.nombre.trim(),
         descripcion: nuevoProducto.descripcion.trim() || '',
@@ -198,9 +206,11 @@ function ProductosScreen() {
       
       Alert.alert('Éxito', 'Nuevo producto guardado con éxito');
     } catch (error) {
-      console.error('❌ Error al crear producto:', error);
+      console.log('❌ Error al crear producto');
       const mensaje = error.response?.data?.message || 'Error al crear el producto';
       Alert.alert('Error', mensaje);
+    } finally {
+      setGuardando(false); // Desactivar indicador de guardado
     }
   };
 
@@ -522,6 +532,8 @@ function ProductosScreen() {
               mode="contained"
               onPress={productoEditable ? editarProducto : agregarProducto}
               style={styles.addButton}
+              disabled={guardando}
+              loading={guardando}
             >
               {productoEditable ? 'Guardar Cambios' : 'Guardar Producto'}
             </Button>

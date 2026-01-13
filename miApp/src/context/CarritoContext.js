@@ -51,7 +51,8 @@ export const CarritoProvider = ({ children }) => {
           return;
         }
       } catch (apiError) {
-        console.log('No se pudo cargar del API, intentando local');
+        // Silenciosamente intentar cargar desde local si el API falla
+        // (esto es normal durante la carga inicial)
       }
 
       // Si falla el API, cargar desde AsyncStorage
