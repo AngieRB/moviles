@@ -6,19 +6,56 @@ import * as ImagePicker from 'expo-image-picker';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme } from 'react-native-paper';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import InicioProductorScreen from './InicioProductorScreen';
 import PedidosPendientesScreen from './PedidosPendientesScreen';
 import ConversacionesClientesScreen from './ConversacionesClientesScreen';
 import PerfilScreen from '../common/PerfilScreen';
+import ReportScreen from '../common/ReportScreen';
+import MisReportesScreen from '../common/MisReportesScreen';
 import apiClient from '../../services/apiClient';
 import { useNotificaciones } from '../../context/NotificacionesContext';
 
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
+
+// Stack de reportes
+function ReportesStackNavigator() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: '#FF3B30',
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+        cardStyle: {
+          backgroundColor: '#f5f5f5',
+        },
+      }}
+    >
+      <Stack.Screen
+        name="MisReportes"
+        component={MisReportesScreen}
+        options={{ headerTitle: '⚠️ Mis Reportes' }}
+      />
+      <Stack.Screen
+        name="Report"
+        component={ReportScreen}
+        options={{ headerTitle: 'Crear Reporte' }}
+      />
+    </Stack.Navigator>
+  );
+}
 
 
 export default function ProductorDashboard() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { mensajesNoLeidos } = useNotificaciones();
 
   return (
@@ -29,6 +66,19 @@ export default function ProductorDashboard() {
         tabBarStyle: {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.outline,
+          elevation: 10,
+          height: 65 + (insets.bottom > 0 ? insets.bottom : 5),
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
+          paddingTop: 10,
+        },
+        tabBarItemStyle: {
+          justifyContent: 'center',
+          paddingVertical: 4,
+        },
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '600',
+          marginBottom: 4,
         },
         sceneStyle: {
           backgroundColor: theme.colors.background,
@@ -114,6 +164,14 @@ export default function ProductorDashboard() {
             <Icon name="account" size={size} color={color} />
           ),
           tabBarLabel: 'Perfil',
+        }}
+      />
+      <Tab.Screen
+        name="ReportesTab"
+        component={ReportesStackNavigator}
+        options={{
+          tabBarButton: () => null, // Ocultar del tab bar
+          headerShown: false,
         }}
       />
     </Tab.Navigator>

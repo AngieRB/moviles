@@ -138,7 +138,6 @@ export default function ProductosScreen({ navigation, route }) {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoriesContainer}
-          contentContainerStyle={styles.categoriesContainer}
         />
 
       {loading && !refreshing ? (

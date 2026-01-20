@@ -1,10 +1,10 @@
 import React from 'react';
 import { View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useTheme, Badge } from 'react-native-paper';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useNotificaciones } from '../../context/NotificacionesContext';
 import InicioConsumidorScreen from './InicioConsumidorScreen';
 import PerfilScreen from '../common/PerfilScreen';
@@ -17,6 +17,8 @@ import MisPedidosScreen from './MisPedidosScreen';
 import DetallePedidoScreen from './DetallePedidoScreen';
 import ChatProductoresScreen from './ChatProductoresScreen';
 import ConversacionesProductoresScreen from './ConversacionesProductoresScreen';
+import ReportScreen from '../common/ReportScreen';
+import MisReportesScreen from '../common/MisReportesScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -114,8 +116,40 @@ function CarritoStackNavigator() {
   );
 }
 
+// Stack de reportes
+function ReportesStackNavigator() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: '#FF3B30',
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+        cardStyle: {
+          backgroundColor: '#f5f5f5',
+        },
+      }}
+    >
+      <Stack.Screen
+        name="MisReportes"
+        component={MisReportesScreen}
+        options={{ headerTitle: '⚠️ Mis Reportes' }}
+      />
+      <Stack.Screen
+        name="Report"
+        component={ReportScreen}
+        options={{ headerTitle: 'Crear Reporte' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 export default function ConsumidorDashboard() {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { mensajesNoLeidos } = useNotificaciones();
 
   return (
@@ -126,21 +160,21 @@ export default function ConsumidorDashboard() {
         tabBarStyle: {
           backgroundColor: '#fff',
           borderTopColor: '#e0e0e0',
-          paddingHorizontal: 0,
-          height: 70,
-          paddingBottom: 6,
-          paddingTop: 6,
           elevation: 10,
+          height: 70 + (insets.bottom > 0 ? insets.bottom : 5),
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          paddingTop: 8,
+          paddingHorizontal: 4,
         },
         tabBarItemStyle: {
-          flex: 1,
           justifyContent: 'center',
-          alignItems: 'center',
+          paddingVertical: 2,
         },
         tabBarLabelStyle: {
-          fontSize: 13,
+          fontSize: 12,
           fontWeight: '600',
           marginTop: 2,
+          marginBottom: 2,
         },
         sceneStyle: {
           backgroundColor: '#f5f5f5',
@@ -167,8 +201,8 @@ export default function ConsumidorDashboard() {
         name="InicioTab"
         component={InicioConsumidorScreen}
         options={{
-          tabBarIcon: ({ color, size, focused }) => (
-            <Icon name="home" size={focused ? 32 : 26} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="home" size={28} color={color} />
           ),
           tabBarLabel: 'Inicio',
           headerTitle: '🛒 AgroConnect',
@@ -179,8 +213,8 @@ export default function ConsumidorDashboard() {
         name="ProductosTab"
         component={ProductosStackNavigator}
         options={{
-          tabBarIcon: ({ color, size, focused }) => (
-            <Icon name="shopping" size={focused ? 32 : 26} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="shopping" size={28} color={color} />
           ),
           tabBarLabel: 'Productos',
           headerShown: false,
@@ -191,8 +225,8 @@ export default function ConsumidorDashboard() {
         name="CarritoTab"
         component={CarritoStackNavigator}
         options={{
-          tabBarIcon: ({ color, size, focused }) => (
-            <Icon name="cart" size={focused ? 32 : 26} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="cart" size={28} color={color} />
           ),
           tabBarLabel: 'Carrito',
           headerShown: false,
@@ -203,9 +237,9 @@ export default function ConsumidorDashboard() {
         name="ChatTab"
         component={ConversacionesProductoresScreen}
         options={{
-          tabBarIcon: ({ color, size, focused }) => (
+          tabBarIcon: ({ color, size }) => (
             <View>
-              <Icon name="message" size={focused ? 32 : 26} color={color} />
+              <Icon name="message" size={28} color={color} />
               {mensajesNoLeidos > 0 && (
                 <Badge
                   size={16}
@@ -230,8 +264,8 @@ export default function ConsumidorDashboard() {
         name="PedidosTab"
         component={PedidosStackNavigator}
         options={{
-          tabBarIcon: ({ color, size, focused }) => (
-            <Icon name="package-variant" size={focused ? 32 : 26} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="package-variant" size={28} color={color} />
           ),
           tabBarLabel: 'Pedidos',
           headerShown: false,
@@ -242,8 +276,8 @@ export default function ConsumidorDashboard() {
         name="PerfilTab"
         component={PerfilScreen}
         options={{
-          tabBarIcon: ({ color, size, focused }) => (
-            <Icon name="account" size={focused ? 32 : 26} color={color} />
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="account" size={28} color={color} />
           ),
           tabBarLabel: 'Perfil',
           headerTitle: '👤 Mi Perfil',
@@ -256,6 +290,15 @@ export default function ConsumidorDashboard() {
         options={{
           tabBarButton: () => null, // Ocultar del tab bar
           headerTitle: '⚙️ Configuración',
+        }}
+      />
+
+      <Tab.Screen
+        name="ReportesTab"
+        component={ReportesStackNavigator}
+        options={{
+          tabBarButton: () => null, // Ocultar del tab bar
+          headerShown: false,
         }}
       />
     </Tab.Navigator>

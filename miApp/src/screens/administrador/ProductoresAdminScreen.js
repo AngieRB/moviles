@@ -359,15 +359,15 @@ Atentamente,
                         onPress={() => verificarYNotificar(productor)}
                         style={[styles.btn, { backgroundColor: '#4CAF50' }]}
                         icon="check"
-                        compact
                         loading={procesando}
+                        compact
                       >
                         Aprobar
                       </Button>
                       <Button
                         mode="outlined"
                         onPress={() => abrirDialogo(productor, 'eliminar')}
-                        style={[styles.btn, { borderColor: '#F44336' }]}
+                        style={styles.btn}
                         textColor="#F44336"
                         icon="close"
                         compact
@@ -379,11 +379,9 @@ Atentamente,
                     <Button
                       mode="outlined"
                       onPress={() => abrirDialogo(productor, 'rechazar')}
-                      style={[styles.btn, { borderColor: '#FF9800' }]}
+                      style={styles.btn}
                       textColor="#FF9800"
-                      icon="close"
-                      compact
-                    >
+                      icon="close"                      compact                    >
                       Quitar Aprobación
                     </Button>
                   )}

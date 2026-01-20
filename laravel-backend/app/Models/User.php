@@ -28,7 +28,13 @@ class User extends Authenticatable
         'role', // productor, consumidor, administrador
         'role_data', // JSON con datos específicos del rol
         'verificado', // Agregado para permitir asignación masiva si es necesario
-        'fecha_verificacion'
+        'fecha_verificacion',
+        'bloqueado',
+        'tipo_bloqueo',
+        'motivo_bloqueo',
+        'fecha_bloqueo',
+        'fecha_desbloqueo',
+        'bloqueado_por'
     ];
 
     /**

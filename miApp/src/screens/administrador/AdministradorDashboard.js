@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import InicioAdminScreen from './InicioAdminScreen';
 import ClientesScreen from './ClientesScreen';
 import ProductoresAdminScreen from './ProductoresAdminScreen';
+import ReportsManagementScreen from './ReportsManagementScreen';
 import PerfilScreen from '../common/PerfilScreen';
 import ConfiguracionScreen from '../common/ConfiguracionScreen';
 
@@ -91,6 +92,16 @@ export default function AdministradorDashboard() {
             <Icon name="leaf" size={28} color={color} />
           ),
           headerTitle: '🌾 Productores',
+        }}
+      />
+      <Tab.Screen
+        name="Reportes"
+        component={ReportsManagementScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="alert-octagon" size={28} color={color} />
+          ),
+          headerTitle: '⚠️ Reportes',
         }}
       />
       <Tab.Screen

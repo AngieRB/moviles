@@ -10,6 +10,7 @@ use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\StripeController;
+use App\Http\Controllers\ReportController;
 
 // ============================================
 // RUTAS PÚBLICAS (Sin autenticación)
@@ -113,6 +114,28 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/stripe/create-payment-intent', [StripeController::class, 'createPaymentIntent']);
     Route::post('/stripe/confirm-payment', [StripeController::class, 'confirmPayment']);
+
+    // ============================================
+    // REPORTES Y BLOQUEOS
+    // ============================================
+
+    // Crear reporte (cualquier usuario autenticado)
+    Route::post('/reportes', [ReportController::class, 'store']);
+
+    // Ver mis reportes (DEBE IR ANTES de /reportes para evitar conflictos)
+    Route::get('/mis-reportes', [ReportController::class, 'misReportes']);
+
+    // Admin: Listar todos los reportes
+    Route::get('/reportes', [ReportController::class, 'index']);
+
+    // Ver detalle de un reporte (DEBE IR DESPUÉS de /reportes)
+    Route::get('/reportes/{id}', [ReportController::class, 'show']);
+
+    // Admin: Actualizar estado de reporte
+    Route::put('/reportes/{id}/estado', [ReportController::class, 'updateEstado']);
+
+    // Admin: Bloquear/Desbloquear usuario
+    Route::post('/usuarios/{userId}/bloqueo', [ReportController::class, 'toggleBloqueo']);
 
     // ============================================
     // ADMIN - Estadísticas y gestión

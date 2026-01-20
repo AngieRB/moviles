@@ -78,30 +78,7 @@ export default function ClientesScreen() {
     return matchSearch;
   });
 
-  // Función para enviar mensaje por WhatsApp
-  const enviarWhatsApp = (cliente) => {
-    let telefono = cliente.telefono || '';
-    
-    // Limpiar el número de teléfono
-    telefono = telefono.replace(/[\s\-\(\)]/g, '');
-    
-    // Si no empieza con +, agregar código de país (Ecuador)
-    if (!telefono.startsWith('+')) {
-      if (telefono.startsWith('0')) {
-        telefono = telefono.substring(1);
-      }
-      telefono = '+593' + telefono;
-    }
-    
-    const mensaje = `Hola ${cliente.nombre}, te escribimos desde AgroConnect. ¿En qué podemos ayudarte?`;
-    const mensajeCodificado = encodeURIComponent(mensaje);
-    const url = `https://wa.me/${telefono}?text=${mensajeCodificado}`;
-    
-    Linking.openURL(url).catch(err => {
-      console.error('Error abriendo WhatsApp:', err);
-      mostrarAlerta('Error', 'No se pudo abrir WhatsApp');
-    });
-  };
+
 
   if (loading && !refreshing) {
     return (
@@ -121,15 +98,6 @@ export default function ClientesScreen() {
         value={searchQuery}
         style={styles.searchbar}
       />
-
-      {/* Estadísticas rápidas */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Icon name="account-group" size={24} color="#4A90E2" />
-          <Text style={styles.statNumber}>{clientes.length}</Text>
-          <Text style={styles.statLabel}>Total Clientes</Text>
-        </View>
-      </View>
 
       <ScrollView
         style={styles.scrollView}
@@ -180,6 +148,46 @@ export default function ClientesScreen() {
                     <Text style={styles.detalleLabel}>Registrado: </Text>
                     {new Date(cliente.created_at).toLocaleDateString('es-ES')}
                   </Text>
+                </View>
+
+                {/* Botones de acción */}
+                <View style={styles.botonesContainer}>
+                  <Button
+                    mode="outlined"
+                    onPress={() => {
+                      Alert.alert(
+                        'Bloquear Cliente',
+                        `¿Deseas bloquear a ${cliente.nombre}?`,
+                        [
+                          { text: 'Cancelar', style: 'cancel' },
+                          {
+                            text: 'Bloquear',
+                            style: 'destructive',
+                            onPress: () => {
+                              // Aquí puedes implementar la lógica de bloqueo
+                              mostrarAlerta('Info', 'Función de bloqueo - Por implementar con el endpoint de bloqueo');
+                            }
+                          }
+                        ]
+                      );
+                    }}
+                    icon="account-lock"
+                    textColor="#FF5722"
+                    style={styles.btn}
+                    compact
+                  >
+                    Bloquear
+                  </Button>
+                  <Button
+                    mode="outlined"
+                    onPress={() => abrirDialogoEliminar(cliente)}
+                    icon="delete"
+                    textColor="#F44336"
+                    style={styles.btn}
+                    compact
+                  >
+                    Eliminar
+                  </Button>
                 </View>
               </Card.Content>
             </Card>
@@ -299,6 +307,7 @@ const styles = StyleSheet.create({
   rolChip: {
     height: 28,
     backgroundColor: '#E3F2FD',
+    alignSelf: 'flex-start',
   },
   divider: {
     marginVertical: 12,
@@ -317,10 +326,13 @@ const styles = StyleSheet.create({
   },
   botonesContainer: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 8,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 10,
   },
   btn: {
     borderRadius: 8,
+    flex: 1,
   },
 });

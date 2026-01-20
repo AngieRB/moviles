@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
 import { StyleSheet, View, ScrollView, Image, TouchableOpacity, Alert } from 'react-native';
 import { Text, Card, Avatar, TextInput, Button, IconButton, HelperText } from 'react-native-paper';
+import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import * as ImagePicker from 'expo-image-picker';
 import { useApp } from '../../context/AppContext';
 
 // Pantalla de Perfil común para todos los usuarios
 export default function PerfilScreen() {
   const { user, updateUser } = useApp();
+  const navigation = useNavigation();
   const [editing, setEditing] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [formData, setFormData] = useState({
@@ -185,6 +188,21 @@ export default function PerfilScreen() {
           </Card.Content>
         </Card>
       </View>
+
+      {/* Botón de Mis Reportes */}
+      <TouchableOpacity
+        style={styles.reportesButton}
+        onPress={() => navigation.navigate('ReportesTab')}
+      >
+        <View style={styles.reportesContent}>
+          <Icon name="alert-octagon" size={24} color="#FF3B30" style={styles.reportesIcon} />
+          <View style={styles.reportesTextContainer}>
+            <Text style={styles.reportesTitle}>Mis Reportes</Text>
+            <Text style={styles.reportesSubtitle}>Ver mis reportes realizados</Text>
+          </View>
+          <Icon name="chevron-right" size={24} color="#999" />
+        </View>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -262,5 +280,36 @@ const styles = StyleSheet.create({
   },
   editIcon: {
     alignSelf: 'flex-end',
+  },
+  reportesButton: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  reportesContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  reportesIcon: {
+    marginRight: 12,
+  },
+  reportesTextContainer: {
+    flex: 1,
+  },
+  reportesTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  reportesSubtitle: {
+    fontSize: 12,
+    color: '#999',
+    marginTop: 2,
   },
 });
