@@ -36,48 +36,120 @@ export default function PerfilScreen() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
-    if (!validateForm()) return;
-    updateUser(formData);
-    setEditing(false);
+  const handleSave = async () => {
+    console.log('=== handleSave iniciado ===');
+    console.log('profileImage:', profileImage);
+    console.log('formData:', formData);
+    
+    if (!validateForm()) {
+      console.log('Validación falló');
+      return;
+    }
+    
+    console.log('Validación OK, continuando...');
+    
+    try {
+      // Si hay una imagen nueva, subirla primero
+      if (profileImage) {
+        console.log('Subiendo foto de perfil...');
+        const formDataImage = new FormData();
+        
+        // Crear el objeto de archivo desde la URI
+        const filename = profileImage.split('/').pop();
+        const match = /\.(\w+)$/.exec(filename);
+        const type = match ? `image/${match[1]}` : 'image/jpeg';
+        
+        formDataImage.append('foto_perfil', {
+          uri: profileImage,
+          name: filename,
+          type: type,
+        });
+        
+        console.log('FormData creado, enviando a /actualizar-foto-perfil');
+        
+        // Subir la imagen (NO establecer Content-Type, axios lo hace automático con FormData)
+        const response = await apiClient.post('/actualizar-foto-perfil', formDataImage);
+        
+        console.log('Respuesta del servidor:', response.data);
+        
+        // Actualizar el usuario con la nueva foto
+        if (response.data.foto_perfil) {
+          console.log('Actualizando usuario con foto_perfil:', response.data.foto_perfil);
+          await updateUser({ foto_perfil: response.data.foto_perfil });
+          console.log('Usuario actualizado');
+        }
+        
+        setProfileImage(null);
+        Alert.alert('Éxito', 'Foto de perfil actualizada correctamente');
+      }
+      
+      // Actualizar otros datos del perfil si es necesario
+      if (formData.email !== user.email || formData.telefono !== user.telefono) {
+        await updateUser(formData);
+      }
+      
+      setEditing(false);
+    } catch (error) {
+      console.error('=== ERROR en handleSave ===');
+      console.error('Error completo:', error);
+      console.error('Error.response:', error.response);
+      console.error('Error.message:', error.message);
+      Alert.alert('Error', 'No se pudo actualizar el perfil. Intenta de nuevo.');
+    }
   };
 
   const pickImage = async () => {
-    const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    
-    if (!permissionResult.granted) {
-      Alert.alert('Permiso denegado', 'Necesitas dar permiso para acceder a las fotos');
-      return;
-    }
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (!permissionResult.granted) {
+        Alert.alert(
+          'Permiso denegado', 
+          'Necesitas dar permiso para acceder a las fotos. Ve a Configuración de la app para habilitar el permiso.'
+        );
+        return;
+      }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
 
-    if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setProfileImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error al seleccionar imagen:', error);
+      Alert.alert('Error', 'No se pudo abrir la galería. Por favor intenta de nuevo.');
     }
   };
 
   const takePhoto = async () => {
-    const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
-    
-    if (!permissionResult.granted) {
-      Alert.alert('Permiso denegado', 'Necesitas dar permiso para usar la cámara');
-      return;
-    }
+    try {
+      const permissionResult = await ImagePicker.requestCameraPermissionsAsync();
+      
+      if (!permissionResult.granted) {
+        Alert.alert(
+          'Permiso denegado', 
+          'Necesitas dar permiso para usar la cámara. Ve a Configuración de la app para habilitar el permiso.'
+        );
+        return;
+      }
 
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
 
-    if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        setProfileImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error al tomar foto:', error);
+      Alert.alert('Error', 'No se pudo abrir la cámara. Por favor intenta de nuevo.');
     }
   };
 
@@ -100,6 +172,11 @@ export default function PerfilScreen() {
           <TouchableOpacity onPress={showImageOptions} style={styles.avatarContainer}>
             {profileImage ? (
               <Image source={{ uri: profileImage }} style={styles.profileImage} />
+            ) : user?.foto_perfil ? (
+              <Image 
+                source={{ uri: `http://192.168.10.243:8000/storage/${user.foto_perfil}` }} 
+                style={styles.profileImage} 
+              />
             ) : (
               <Avatar.Icon size={100} icon="leaf" style={styles.avatar} />
             )}
@@ -192,13 +269,21 @@ export default function PerfilScreen() {
       {/* Botón de Mis Reportes */}
       <TouchableOpacity
         style={styles.reportesButton}
-        onPress={() => navigation.navigate('ReportesTab')}
+        onPress={() => {
+          // Para administrador, navegar directamente al Tab de Reportes
+          if (user?.role === 'administrador') {
+            navigation.navigate('Reportes');
+          } else {
+            // Para consumidor y productor, navegar al Stack de Reportes
+            navigation.navigate('ReportesTab', { screen: 'MisReportes' });
+          }
+        }}
       >
         <View style={styles.reportesContent}>
           <Icon name="alert-octagon" size={24} color="#FF3B30" style={styles.reportesIcon} />
           <View style={styles.reportesTextContainer}>
-            <Text style={styles.reportesTitle}>Mis Reportes</Text>
-            <Text style={styles.reportesSubtitle}>Ver mis reportes realizados</Text>
+            <Text style={styles.reportesTitle}>{user?.role === 'administrador' ? 'Gestionar Reportes' : 'Mis Reportes'}</Text>
+            <Text style={styles.reportesSubtitle}>{user?.role === 'administrador' ? 'Administrar reportes del sistema' : 'Ver mis reportes realizados'}</Text>
           </View>
           <Icon name="chevron-right" size={24} color="#999" />
         </View>

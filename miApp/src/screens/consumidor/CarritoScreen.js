@@ -129,75 +129,78 @@ export default function CarritoScreen({ navigation }) {
             renderItem={renderItem}
             keyExtractor={(item) => item.id.toString()}
             contentContainerStyle={styles.listContainer}
+            showsVerticalScrollIndicator={false}
           />
 
-          {/* Resumen de compra */}
-          <View style={styles.resumenCard}>
-            <Text style={styles.resumenTitulo}>Resumen de compra</Text>
+          {/* Sticky Resumen de compra */}
+          <View style={styles.stickyFooter}>
+            <View style={styles.resumenCard}>
+              <Text style={styles.resumenTitulo}>Resumen de compra</Text>
 
-            <View style={styles.resumenRow}>
-              <Text style={styles.resumenLabel}>
-                Productos ({items.length}):
-              </Text>
-              <Text style={styles.resumenValor}>
-                ${subtotal.toFixed(2)}
-              </Text>
-            </View>
+              <View style={styles.resumenRow}>
+                <Text style={styles.resumenLabel}>
+                  Productos ({items.length}):
+                </Text>
+                <Text style={styles.resumenValor}>
+                  ${subtotal.toFixed(2)}
+                </Text>
+              </View>
 
-            <View style={styles.resumenRow}>
-              <Text style={styles.resumenLabel}>Envío:</Text>
-              <Text
-                style={[
-                  styles.resumenValor,
-                  envio === 0 && styles.resumenGratis,
-                ]}
-              >
-                {envio === 0 ? '¡Gratis!' : `$${envio.toFixed(2)}`}
-              </Text>
-            </View>
+              <View style={styles.resumenRow}>
+                <Text style={styles.resumenLabel}>Envío:</Text>
+                <Text
+                  style={[
+                    styles.resumenValor,
+                    envio === 0 && styles.resumenGratis,
+                  ]}
+                >
+                  {envio === 0 ? '¡Gratis!' : `$${envio.toFixed(2)}`}
+                </Text>
+              </View>
 
-            {envio > 0 && (
-              <Text style={styles.advertencia}>
-                📦 Envío gratis en compras mayores a $20.00
-              </Text>
-            )}
+              {envio > 0 && (
+                <Text style={styles.advertencia}>
+                  📦 Envío gratis en compras mayores a $20.00
+                </Text>
+              )}
 
-            <Divider style={styles.divider} />
+              <Divider style={styles.divider} />
 
-            <View style={styles.totalRow}>
-              <Text style={styles.totalLabel}>Total a pagar:</Text>
-              <Text style={styles.totalValor}>${total.toFixed(2)}</Text>
-            </View>
+              <View style={styles.totalRow}>
+                <Text style={styles.totalLabel}>Total a pagar:</Text>
+                <Text style={styles.totalValor}>${total.toFixed(2)}</Text>
+              </View>
 
-            <View style={styles.buttonsContainer}>
-              <Button
-                mode="outlined"
-                onPress={() => navigation.navigate('ProductosTab')}
-                style={styles.btnContinuar}
-              >
-                Continuar comprando
-              </Button>
-              <Button
-                mode="contained"
-                onPress={() => {
-                  navigation.navigate('Pago', {
-                    total: total,
-                    items: items.map(item => ({
-                      id: item.id,
-                      producto_id: item.producto_id || item.id,
-                      nombre: item.nombre,
-                      cantidad: item.cantidad,
-                      precio: item.precio,
-                    })),
-                    direccionEnvio: '',
-                  });
-                }}
-                style={styles.btnPagar}
-                labelStyle={styles.btnPagarLabel}
-                icon="credit-card"
-              >
-                Proceder al pago
-              </Button>
+              <View style={styles.buttonsContainer}>
+                <Button
+                  mode="outlined"
+                  onPress={() => navigation.navigate('ProductosTab')}
+                  style={styles.btnContinuar}
+                >
+                  Continuar comprando
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={() => {
+                    navigation.navigate('Pago', {
+                      total: total,
+                      items: items.map(item => ({
+                        id: item.id,
+                        producto_id: item.producto_id || item.id,
+                        nombre: item.nombre,
+                        cantidad: item.cantidad,
+                        precio: item.precio,
+                      })),
+                      direccionEnvio: '',
+                    });
+                  }}
+                  style={styles.btnPagar}
+                  labelStyle={styles.btnPagarLabel}
+                  icon="credit-card"
+                >
+                  Proceder al pago
+                </Button>
+              </View>
             </View>
           </View>
         </>
@@ -310,13 +313,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#4A90E2',
     paddingHorizontal: 24,
   },
+  stickyFooter: {
+    backgroundColor: '#fff',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e0e0e0',
+  },
   resumenCard: {
     backgroundColor: '#fff',
-    marginHorizontal: 12,
-    marginBottom: 12,
     padding: 16,
-    borderRadius: 12,
-    elevation: 3,
   },
   resumenTitulo: {
     fontSize: 16,

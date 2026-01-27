@@ -11,8 +11,9 @@ import InicioProductorScreen from './InicioProductorScreen';
 import PedidosPendientesScreen from './PedidosPendientesScreen';
 import ConversacionesClientesScreen from './ConversacionesClientesScreen';
 import PerfilScreen from '../common/PerfilScreen';
-import ReportScreen from '../common/ReportScreen';
-import MisReportesScreen from '../common/MisReportesScreen';
+import ConfiguracionScreen from '../common/ConfiguracionScreen';
+import CrearReporteScreen from '../CrearReporteScreen';
+import MisReportesScreen from '../MisReportesScreen';
 import apiClient from '../../services/apiClient';
 import { useNotificaciones } from '../../context/NotificacionesContext';
 
@@ -41,11 +42,14 @@ function ReportesStackNavigator() {
       <Stack.Screen
         name="MisReportes"
         component={MisReportesScreen}
-        options={{ headerTitle: '⚠️ Mis Reportes' }}
+        options={{ 
+          headerTitle: '⚠️ Mis Reportes',
+          headerLeft: () => null
+        }}
       />
       <Stack.Screen
-        name="Report"
-        component={ReportScreen}
+        name="CrearReporte"
+        component={CrearReporteScreen}
         options={{ headerTitle: 'Crear Reporte' }}
       />
     </Stack.Navigator>
@@ -67,18 +71,21 @@ export default function ProductorDashboard() {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.outline,
           elevation: 10,
-          height: 65 + (insets.bottom > 0 ? insets.bottom : 5),
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
-          paddingTop: 10,
+          height: 70 + (insets.bottom > 0 ? insets.bottom : 5),
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 8,
+          paddingTop: 8,
+          paddingHorizontal: 0,
         },
         tabBarItemStyle: {
           justifyContent: 'center',
-          paddingVertical: 4,
+          paddingVertical: 2,
+          flex: 1,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 12,
           fontWeight: '600',
-          marginBottom: 4,
+          marginTop: 2,
+          marginBottom: 2,
         },
         sceneStyle: {
           backgroundColor: theme.colors.background,
@@ -106,8 +113,9 @@ export default function ProductorDashboard() {
         component={InicioProductorScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="home" size={size} color={color} />
+            <Icon name="home" size={28} color={color} />
           ),
+          tabBarLabel: 'Inicio',
           headerTitle: '🌾 AgroConnect - Productor',
         }}
       />
@@ -116,8 +124,9 @@ export default function ProductorDashboard() {
         component={PedidosPendientesScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="calendar" size={size} color={color} />
+            <Icon name="calendar" size={28} color={color} />
           ),
+          tabBarLabel: 'Pedidos',
           headerTitle: 'Pedidos Pendientes',
         }}
       />
@@ -126,8 +135,9 @@ export default function ProductorDashboard() {
         component={ProductosScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="shopping" size={size} color={color} />
+            <Icon name="shopping" size={28} color={color} />
           ),
+          tabBarLabel: 'Productos',
           headerTitle: 'Mis Productos',
         }}
       />
@@ -137,7 +147,7 @@ export default function ProductorDashboard() {
         options={{
           tabBarIcon: ({ color, size }) => (
             <View>
-              <Icon name="message" size={size} color={color} />
+              <Icon name="message" size={28} color={color} />
               {mensajesNoLeidos > 0 && (
                 <Badge
                   size={16}
@@ -153,7 +163,19 @@ export default function ProductorDashboard() {
               )}
             </View>
           ),
+          tabBarLabel: 'Chat',
           headerTitle: 'Chat con Clientes',
+        }}
+      />
+      <Tab.Screen
+        name="ReportesTab"
+        component={ReportesStackNavigator}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="alert-octagon" size={28} color={color} />
+          ),
+          tabBarLabel: 'Reportes',
+          headerShown: false,
         }}
       />
       <Tab.Screen
@@ -161,17 +183,9 @@ export default function ProductorDashboard() {
         component={PerfilScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="account" size={size} color={color} />
+            <Icon name="account" size={28} color={color} />
           ),
           tabBarLabel: 'Perfil',
-        }}
-      />
-      <Tab.Screen
-        name="ReportesTab"
-        component={ReportesStackNavigator}
-        options={{
-          tabBarButton: () => null, // Ocultar del tab bar
-          headerShown: false,
         }}
       />
     </Tab.Navigator>
@@ -383,7 +397,7 @@ function ProductosScreen() {
             
             try {
               const result = await ImagePicker.launchCameraAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: ImagePicker.MediaType.Images,
                 allowsEditing: true,
                 aspect: [1, 1],
                 quality: 0.7,
@@ -408,7 +422,7 @@ function ProductosScreen() {
             
             try {
               const result = await ImagePicker.launchImageLibraryAsync({
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: ImagePicker.MediaType.Images,
                 allowsEditing: true,
                 aspect: [1, 1],
                 quality: 0.7,

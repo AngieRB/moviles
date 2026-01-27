@@ -16,6 +16,7 @@ class Producto extends Model
         'descripcion',
         'imagen',
         'disponibles',
+        'disponible',
         'calificacion',
         'user_id', // ID del productor
     ];
@@ -24,6 +25,7 @@ class Producto extends Model
         'precio' => 'decimal:2',
         'calificacion' => 'decimal:1',
         'disponibles' => 'integer',
+        'disponible' => 'boolean',
     ];
 
     /**

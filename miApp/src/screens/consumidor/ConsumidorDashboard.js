@@ -17,8 +17,10 @@ import MisPedidosScreen from './MisPedidosScreen';
 import DetallePedidoScreen from './DetallePedidoScreen';
 import ChatProductoresScreen from './ChatProductoresScreen';
 import ConversacionesProductoresScreen from './ConversacionesProductoresScreen';
-import ReportScreen from '../common/ReportScreen';
-import MisReportesScreen from '../common/MisReportesScreen';
+import CrearReporteScreen from '../CrearReporteScreen';
+import MisReportesScreen from '../MisReportesScreen';
+import ProveedoresScreen from '../ProveedoresScreen';
+import PerfilProveedorScreen from '../PerfilProveedorScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -116,6 +118,79 @@ function CarritoStackNavigator() {
   );
 }
 
+// Stack de proveedores
+function ProveedoresStackNavigator() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: '#4A90E2',
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+        cardStyle: {
+          backgroundColor: '#f5f5f5',
+        },
+      }}
+    >
+      <Stack.Screen
+        name="ProveedoresList"
+        component={ProveedoresScreen}
+        options={{ headerTitle: '👨‍🌾 Proveedores' }}
+      />
+      <Stack.Screen
+        name="PerfilProveedor"
+        component={PerfilProveedorScreen}
+        options={{ headerTitle: 'Perfil del Proveedor' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
+// Stack de perfil con configuración
+function PerfilStackNavigator() {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: '#4A90E2',
+        },
+        headerTintColor: '#fff',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+        cardStyle: {
+          backgroundColor: '#f5f5f5',
+        },
+      }}
+    >
+      <Stack.Screen
+        name="PerfilMain"
+        component={PerfilScreen}
+        options={({ navigation }) => ({
+          headerTitle: '👤 Mi Perfil',
+          headerRight: () => (
+            <Icon
+              name="cog"
+              size={28}
+              color="#FFFFFF"
+              onPress={() => navigation.navigate('Configuracion')}
+              style={{ marginRight: 15 }}
+            />
+          ),
+        })}
+      />
+      <Stack.Screen
+        name="Configuracion"
+        component={ConfiguracionScreen}
+        options={{ headerTitle: '⚙️ Configuración' }}
+      />
+    </Stack.Navigator>
+  );
+}
+
 // Stack de reportes
 function ReportesStackNavigator() {
   return (
@@ -136,11 +211,14 @@ function ReportesStackNavigator() {
       <Stack.Screen
         name="MisReportes"
         component={MisReportesScreen}
-        options={{ headerTitle: '⚠️ Mis Reportes' }}
+        options={{ 
+          headerTitle: '⚠️ Mis Reportes',
+          headerLeft: () => null
+        }}
       />
       <Stack.Screen
-        name="Report"
-        component={ReportScreen}
+        name="CrearReporte"
+        component={CrearReporteScreen}
         options={{ headerTitle: 'Crear Reporte' }}
       />
     </Stack.Navigator>
@@ -191,7 +269,7 @@ export default function ConsumidorDashboard() {
             name="cog"
             size={28}
             color="#FFFFFF"
-            onPress={() => navigation.navigate('ConfiguracionTab')}
+            onPress={() => navigation.navigate('PerfilTab', { screen: 'Configuracion' })}
             style={{ marginRight: 15 }}
           />
         ),
@@ -273,23 +351,14 @@ export default function ConsumidorDashboard() {
       />
 
       <Tab.Screen
-        name="PerfilTab"
-        component={PerfilScreen}
+        name="ProveedoresTab"
+        component={ProveedoresStackNavigator}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="account" size={28} color={color} />
+            <Icon name="account-group" size={28} color={color} />
           ),
-          tabBarLabel: 'Perfil',
-          headerTitle: '👤 Mi Perfil',
-        }}
-      />
-
-      <Tab.Screen
-        name="ConfiguracionTab"
-        component={ConfiguracionScreen}
-        options={{
-          tabBarButton: () => null, // Ocultar del tab bar
-          headerTitle: '⚙️ Configuración',
+          tabBarLabel: 'Proveedores',
+          headerShown: false,
         }}
       />
 
@@ -297,7 +366,22 @@ export default function ConsumidorDashboard() {
         name="ReportesTab"
         component={ReportesStackNavigator}
         options={{
-          tabBarButton: () => null, // Ocultar del tab bar
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="alert-octagon" size={28} color={color} />
+          ),
+          tabBarLabel: 'Reportes',
+          headerShown: false,
+        }}
+      />
+
+      <Tab.Screen
+        name="PerfilTab"
+        component={PerfilStackNavigator}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <Icon name="account" size={28} color={color} />
+          ),
+          tabBarLabel: 'Perfil',
           headerShown: false,
         }}
       />

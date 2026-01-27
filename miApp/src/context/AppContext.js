@@ -40,7 +40,7 @@ export const AppProvider = ({ children }) => {
 
   // Login del usuario - AHORA GUARDA EN ASYNCSTORAGE
   const login = async (userData, tokenValue) => {
-    setUser({
+    const userToStore = {
       id: userData.id,
       nombre: userData.nombre,
       apellido: userData.apellido,
@@ -49,15 +49,17 @@ export const AppProvider = ({ children }) => {
       role: userData.role,
       avatar: userData.avatar || null,
       cedula: userData.cedula,
+      foto_perfil: userData.foto_perfil || null,
       // Datos específicos por rol
       roleData: userData.roleData || null,
-    });
+    };
+    setUser(userToStore);
     setToken(tokenValue);
     setIsAuthenticated(true);
     
     // Guardar en AsyncStorage para persistencia
     await AsyncStorage.setItem('token', tokenValue);
-    await AsyncStorage.setItem('user', JSON.stringify(userData));
+    await AsyncStorage.setItem('user', JSON.stringify(userToStore));
   };
 
   // Logout del usuario - LLAMA A LA API Y LIMPIA ASYNCSTORAGE
@@ -80,11 +82,19 @@ export const AppProvider = ({ children }) => {
   };
 
   // Actualizar datos del usuario
-  const updateUser = (updatedData) => {
-    setUser(prev => ({
-      ...prev,
+  const updateUser = async (updatedData) => {
+    const updatedUser = {
+      ...user,
       ...updatedData,
-    }));
+    };
+    setUser(updatedUser);
+    
+    // Persistir en AsyncStorage
+    try {
+      await AsyncStorage.setItem('user', JSON.stringify(updatedUser));
+    } catch (error) {
+      console.log('Error al guardar usuario actualizado:', error);
+    }
   };
 
   // Cambiar tema (toggle entre claro y oscuro)

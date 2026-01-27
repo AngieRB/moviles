@@ -26,21 +26,21 @@ export default function AdministradorDashboard() {
           backgroundColor: theme.colors.surface,
           borderTopColor: theme.colors.outline,
           elevation: 10,
-          // Altura base (65) + espacio seguro del celular (notch/barra)
-          height: 65 + (insets.bottom > 0 ? insets.bottom : 5),
-          // Padding para subir los iconos y que no toquen el borde
-          paddingBottom: insets.bottom > 0 ? insets.bottom : 10,
-          paddingTop: 10,
+          height: 60 + insets.bottom,
+          paddingBottom: insets.bottom > 0 ? insets.bottom : 5,
+          paddingTop: 5,
         },
         tabBarItemStyle: {
-          // Centra los elementos verticalmente
           justifyContent: 'center',
-          paddingVertical: 4,
+          alignItems: 'center',
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 12,
           fontWeight: '600',
-          marginBottom: 4,
+          marginTop: 4,
+        },
+        tabBarIconStyle: {
+          marginTop: 0,
         },
         sceneStyle: {
           backgroundColor: theme.colors.background,
@@ -112,15 +112,6 @@ export default function AdministradorDashboard() {
             <Icon name="account" size={28} color={color} />
           ),
           headerTitle: '👤 Mi Perfil',
-        }}
-      />
-      {/* Configuración oculta pero accesible */}
-      <Tab.Screen
-        name="Configuracion"
-        component={ConfiguracionScreen}
-        options={{
-          tabBarButton: () => null,
-          headerTitle: '⚙️ Configuración',
         }}
       />
     </Tab.Navigator>

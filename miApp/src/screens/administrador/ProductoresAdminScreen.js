@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, RefreshControl, Alert, Platform, Linking } from 'react-native';
-import { Card, Text, Button, Chip, Searchbar, ActivityIndicator, Portal, Dialog, Divider } from 'react-native-paper';
+import { Card, Text, Button, Chip, Searchbar, ActivityIndicator, Portal, Dialog, Divider, Avatar } from 'react-native-paper';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import apiClient from '../../services/apiClient';
@@ -252,48 +252,52 @@ Atentamente,
 
   return (
     <View style={styles.container}>
-      {/* Barra de búsqueda */}
-      <Searchbar
-        placeholder="Buscar productor..."
-        onChangeText={setSearchQuery}
-        value={searchQuery}
-        style={styles.searchbar}
-      />
+      {/* Sticky Header con Search y Filtros */}
+      <View style={styles.stickyHeader}>
+        <Searchbar
+          placeholder="Buscar productor..."
+          onChangeText={setSearchQuery}
+          value={searchQuery}
+          style={styles.searchbar}
+          elevation={1}
+        />
 
-      {/* Chips de filtro */}
-      <View style={styles.filtrosContainer}>
-        <Chip
-          selected={filtro === 'todos'}
-          onPress={() => setFiltro('todos')}
-          style={[styles.chip, filtro === 'todos' && styles.chipActivo]}
-          textStyle={filtro === 'todos' ? styles.chipTextoActivo : {}}
-        >
-          Todos ({productores.length})
-        </Chip>
-        <Chip
-          selected={filtro === 'verificados'}
-          onPress={() => setFiltro('verificados')}
-          style={[styles.chip, filtro === 'verificados' && styles.chipVerificado]}
-          textStyle={filtro === 'verificados' ? styles.chipTextoActivo : {}}
-        >
-          ✅ Verificados ({productores.filter(p => p.verificado).length})
-        </Chip>
-        <Chip
-          selected={filtro === 'pendientes'}
-          onPress={() => setFiltro('pendientes')}
-          style={[styles.chip, filtro === 'pendientes' && styles.chipPendiente]}
-          textStyle={filtro === 'pendientes' ? styles.chipTextoActivo : {}}
-        >
-          ⏳ Pendientes ({productores.filter(p => !p.verificado).length})
-        </Chip>
+        {/* Chips de filtro */}
+        <View style={styles.filtrosContainer}>
+          <Chip
+            selected={filtro === 'todos'}
+            onPress={() => setFiltro('todos')}
+            style={[styles.chip, filtro === 'todos' && styles.chipActivo]}
+            textStyle={filtro === 'todos' ? styles.chipTextoActivo : {}}
+          >
+            Todos ({productores.length})
+          </Chip>
+          <Chip
+            selected={filtro === 'verificados'}
+            onPress={() => setFiltro('verificados')}
+            style={[styles.chip, filtro === 'verificados' && styles.chipVerificado]}
+            textStyle={filtro === 'verificados' ? styles.chipTextoActivo : {}}
+          >
+            ✅ Verificados ({productores.filter(p => p.verificado).length})
+          </Chip>
+          <Chip
+            selected={filtro === 'pendientes'}
+            onPress={() => setFiltro('pendientes')}
+            style={[styles.chip, filtro === 'pendientes' && styles.chipPendiente]}
+            textStyle={filtro === 'pendientes' ? styles.chipTextoActivo : {}}
+          >
+            ⏳ Pendientes ({productores.filter(p => !p.verificado).length})
+          </Chip>
+        </View>
       </View>
 
       <ScrollView
         style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }} 
-  refreshControl={
-    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#F5A623']} />
-  }
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#F5A623']} />
+        }
       >
         {productoresFiltrados.length === 0 ? (
           <View style={styles.emptyContainer}>
@@ -306,10 +310,21 @@ Atentamente,
               <Card.Content>
                 <View style={styles.cardHeader}>
                   <View style={styles.avatarContainer}>
-                    <Icon name="account-circle" size={50} color={productor.verificado ? '#4CAF50' : '#FF9800'} />
+                    {productor.foto_perfil ? (
+                      <Avatar.Image
+                        size={50}
+                        source={{ uri: `http://192.168.10.243:8000/storage/${productor.foto_perfil}` }}
+                      />
+                    ) : (
+                      <Avatar.Icon
+                        size={50}
+                        icon="account-circle"
+                        style={{ backgroundColor: productor.verificado ? '#4CAF50' : '#FF9800' }}
+                      />
+                    )}
                     {productor.verificado && (
                       <View style={styles.verificadoBadge}>
-                        <Icon name="check-circle" size={18} color="#4CAF50" />
+                        <Icon name="check-decagram" size={16} color="#4CAF50" />
                       </View>
                     )}
                   </View>
@@ -324,9 +339,10 @@ Atentamente,
                   <Chip
                     style={[
                       styles.estadoChip,
-                      { backgroundColor: productor.verificado ? '#E8F5E9' : '#FFF3E0' }
+                      { backgroundColor: productor.verificado ? '#4CAF50' : '#FF9800' }
                     ]}
-                    textStyle={{ color: productor.verificado ? '#2E7D32' : '#E65100', fontSize: 11 }}
+                    textStyle={{ color: '#fff', fontSize: 13, fontWeight: 'bold' }}
+                    icon={productor.verificado ? "check-circle" : "clock-outline"}
                   >
                     {productor.verificado ? 'Verificado' : 'Pendiente'}
                   </Chip>
@@ -429,9 +445,20 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: '#666',
   },
+  stickyHeader: {
+    backgroundColor: '#f5f5f5',
+    paddingBottom: 8,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    zIndex: 1000,
+  },
   searchbar: {
     margin: 12,
-    elevation: 2,
+    marginBottom: 8,
+    elevation: 1,
     backgroundColor: 'white',
   },
   filtrosContainer: {
@@ -488,14 +515,16 @@ const styles = StyleSheet.create({
   },
   verificadoBadge: {
     position: 'absolute',
-    // Usamos negativos para que "salga" un poco del avatar y se vea bien
-    bottom: -4, 
-    right: -4,
+    bottom: 0, 
+    right: 0,
     backgroundColor: '#fff',
-    borderRadius: 12, // Redondo perfecto
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
     zIndex: 10,
-    elevation: 4, // Sombra para que flote
-    padding: 2, // Un borde blanco pequeño alrededor del check
+    elevation: 4,
   },
   infoContainer: {
     flex: 1,
@@ -521,8 +550,9 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   estadoChip: {
-    height: 24, // Chip más pequeño para que no estorbe
+    height: 32,
     alignSelf: 'flex-start',
+    paddingHorizontal: 8,
   },
   divider: {
     marginVertical: 10,

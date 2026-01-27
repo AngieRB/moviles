@@ -144,31 +144,35 @@ export default function ReportsManagementScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtros}>
-        <TouchableOpacity
-          style={[styles.filtroBtn, !filtroEstado && styles.filtroActivo]}
-          onPress={() => setFiltroEstado('')}
-        >
-          <Text style={[styles.filtroText, !filtroEstado && styles.filtroTextoActivo]}>Todos</Text>
-        </TouchableOpacity>
-        {Object.keys(ESTADO_CONFIG).map((estado) => (
+      {/* Sticky Filter Header */}
+      <View style={styles.stickyHeader}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filtros}>
           <TouchableOpacity
-            key={estado}
-            style={[styles.filtroBtn, filtroEstado === estado && styles.filtroActivo]}
-            onPress={() => setFiltroEstado(estado)}
+            style={[styles.filtroBtn, !filtroEstado && styles.filtroActivo]}
+            onPress={() => setFiltroEstado('')}
           >
-            <Text style={[styles.filtroText, filtroEstado === estado && styles.filtroTextoActivo]}>
-              {ESTADO_CONFIG[estado].label}
-            </Text>
+            <Text style={[styles.filtroText, !filtroEstado && styles.filtroTextoActivo]}>Todos</Text>
           </TouchableOpacity>
-        ))}
-      </ScrollView>
+          {Object.keys(ESTADO_CONFIG).map((estado) => (
+            <TouchableOpacity
+              key={estado}
+              style={[styles.filtroBtn, filtroEstado === estado && styles.filtroActivo]}
+              onPress={() => setFiltroEstado(estado)}
+            >
+              <Text style={[styles.filtroText, filtroEstado === estado && styles.filtroTextoActivo]}>
+                {ESTADO_CONFIG[estado].label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
 
       <FlatList
         data={reportes}
         renderItem={renderReporte}
         keyExtractor={(item) => item.id.toString()}
         contentContainerStyle={styles.list}
+        showsVerticalScrollIndicator={false}
       />
 
       {/* Modal de gestión de reporte */}
@@ -328,12 +332,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  stickyHeader: {
+    backgroundColor: '#fff',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    zIndex: 1000,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
   filtros: {
     backgroundColor: '#fff',
     paddingVertical: 8,
     paddingHorizontal: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
     maxHeight: 60,
   },
   filtroBtn: {

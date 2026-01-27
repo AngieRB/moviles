@@ -27,6 +27,7 @@ class User extends Authenticatable
         'password',
         'role', // productor, consumidor, administrador
         'role_data', // JSON con datos específicos del rol
+        'foto_perfil', // Ruta de la foto de perfil
         'verificado', // Agregado para permitir asignación masiva si es necesario
         'fecha_verificacion',
         'bloqueado',

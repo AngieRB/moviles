@@ -7,10 +7,22 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
+use App\Services\ImageService;
+use App\Services\WhatsAppService;
 
 class ReportController extends Controller
 {
+    protected $imageService;
+    protected $whatsappService;
+
+    public function __construct(ImageService $imageService, WhatsAppService $whatsappService)
+    {
+        $this->imageService = $imageService;
+        $this->whatsappService = $whatsappService;
+    }
+
     // Crear un nuevo reporte
     public function store(Request $request)
     {
@@ -19,7 +31,7 @@ class ReportController extends Controller
             'producto_id' => 'nullable|exists:productos,id',
             'pedido_id' => 'nullable|exists:pedidos,id',
             'tipo_reportado' => 'required|in:usuario,producto,pedido',
-            'motivo' => 'required|in:contenido_inapropiado,fraude,producto_falso,mala_calidad,no_entregado,comportamiento_abusivo,spam,otro',
+            'motivo' => 'required|in:producto_defectuoso,cobro_indebido,incumplimiento_entrega,producto_diferente,comportamiento_inadecuado,fraude_proveedor,pedido_fraudulento,pago_no_realizado,devolucion_injustificada,abuso_consumidor,informacion_falsa,otro',
             'descripcion' => 'required|string|max:1000',
             'evidencias.*' => 'nullable|image|mimes:jpeg,png,jpg|max:5120'
         ]);
@@ -28,15 +40,34 @@ class ReportController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Guardar evidencias (fotos)
+        // Calcular prioridad según tipo de motivo
+        $motivosAlta = ['fraude_proveedor', 'pedido_fraudulento', 'cobro_indebido'];
+        $motivosMedia = ['producto_defectuoso', 'incumplimiento_entrega', 'pago_no_realizado'];
+        
+        $prioridad = in_array($request->motivo, $motivosAlta) ? 2 : 
+                    (in_array($request->motivo, $motivosMedia) ? 1 : 0);
+
+        // Guardar evidencias con ImageService
         $evidenciasUrls = [];
         if ($request->hasFile('evidencias')) {
+            $cedula = auth()->user()->cedula;
+            $directorio = "reportes/{$cedula}";
+            
+            // Crear directorio si no existe
+            if (!Storage::disk('public')->exists($directorio)) {
+                Storage::disk('public')->makeDirectory($directorio);
+            }
+            
             foreach ($request->file('evidencias') as $index => $evidencia) {
-                $cedula = auth()->user()->cedula;
-                $timestamp = now()->timestamp;
-                $filename = "{$cedula}_reporte_{$timestamp}_{$index}.jpg";
-                $path = $evidencia->storeAs('reportes', $filename, 'public');
-                $evidenciasUrls[] = $path;
+                try {
+                    $timestamp = now()->timestamp;
+                    $filename = "reporte_{$timestamp}_{$index}." . $evidencia->getClientOriginalExtension();
+                    $path = $evidencia->storeAs($directorio, $filename, 'public');
+                    $evidenciasUrls[] = $path;
+                } catch (\Exception $e) {
+                    // Si falla una evidencia, continuar con las demás
+                    continue;
+                }
             }
         }
 
@@ -48,11 +79,19 @@ class ReportController extends Controller
             'tipo_reportado' => $request->tipo_reportado,
             'motivo' => $request->motivo,
             'descripcion' => $request->descripcion,
+            'prioridad' => $prioridad,
             'evidencias' => $evidenciasUrls,
             'estado' => 'pendiente'
         ]);
 
         $report->load(['reportador', 'reportado', 'producto', 'pedido']);
+
+        // Enviar notificación de WhatsApp al admin
+        try {
+            $this->whatsappService->notificarNuevoReporte($report);
+        } catch (\Exception $e) {
+            Log::error('Error al enviar notificación WhatsApp: ' . $e->getMessage());
+        }
 
         return response()->json([
             'message' => 'Reporte creado exitosamente',
@@ -110,7 +149,8 @@ class ReportController extends Controller
 
         $validator = Validator::make($request->all(), [
             'estado' => 'required|in:pendiente,en_revision,resuelto,rechazado',
-            'respuesta_admin' => 'nullable|string|max:1000'
+            'respuesta_admin' => 'nullable|string|max:1000',
+            'accion_admin' => 'nullable|in:ninguna,advertencia,bloqueo_temporal,bloqueo_permanente,reembolso,cancelacion_pedido'
         ]);
 
         if ($validator->fails()) {
@@ -118,12 +158,52 @@ class ReportController extends Controller
         }
 
         $report = Report::findOrFail($id);
+        
+        // Registrar acción en historial
+        $historial = is_array($report->historial_acciones) ? $report->historial_acciones : (json_decode($report->historial_acciones, true) ?? []);
+        $nuevaAccion = [
+            'admin_id' => auth()->id(),
+            'admin_nombre' => auth()->user()->nombre,
+            'accion' => $request->accion_admin ?? 'ninguna',
+            'estado' => $request->estado,
+            'respuesta' => $request->respuesta_admin,
+            'fecha' => now()->toDateTimeString()
+        ];
+        $historial[] = $nuevaAccion;
+        
         $report->update([
             'estado' => $request->estado,
             'respuesta_admin' => $request->respuesta_admin,
+            'accion_admin' => $request->accion_admin ?? 'ninguna',
+            'historial_acciones' => json_encode($historial),
             'fecha_revision' => now(),
             'revisado_por' => auth()->id()
         ]);
+
+        // Ejecutar acción administrativa si se especificó
+        if ($request->accion_admin && $request->accion_admin !== 'ninguna') {
+            $this->ejecutarAccionAdmin($report, $request->accion_admin, $request->respuesta_admin);
+        }
+
+        // Enviar notificaciones de WhatsApp
+        try {
+            // Notificar al reportador
+            $this->whatsappService->notificarActualizacionReporte($report, $request->accion_admin);
+            
+            // Si hay acción admin, notificar también al reportado
+            if ($request->accion_admin && $request->accion_admin !== 'ninguna') {
+                $reportado = User::find($report->reportado_id);
+                if ($reportado) {
+                    $this->whatsappService->notificarAccionAdministrativa(
+                        $reportado,
+                        $request->accion_admin,
+                        $request->respuesta_admin
+                    );
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error('Error al enviar notificaciones WhatsApp: ' . $e->getMessage());
+        }
 
         $report->load(['reportador', 'reportado', 'producto', 'pedido', 'revisor']);
 
@@ -131,6 +211,71 @@ class ReportController extends Controller
             'message' => 'Estado actualizado',
             'report' => $report
         ]);
+    }
+
+    // Ejecutar acciones administrativas
+    private function ejecutarAccionAdmin($report, $accion, $motivo)
+    {
+        $reportado = User::find($report->reportado_id);
+        
+        if (!$reportado) {
+            return;
+        }
+
+        switch ($accion) {
+            case 'advertencia':
+                // Registrar advertencia en el usuario
+                $advertencias = json_decode($reportado->advertencias ?? '[]', true);
+                $advertencias[] = [
+                    'reporte_id' => $report->id,
+                    'motivo' => $motivo,
+                    'fecha' => now()->toDateTimeString(),
+                    'admin_id' => auth()->id()
+                ];
+                $reportado->update(['advertencias' => json_encode($advertencias)]);
+                break;
+
+            case 'bloqueo_temporal':
+                $reportado->update([
+                    'bloqueado' => true,
+                    'tipo_bloqueo' => 'temporal',
+                    'motivo_bloqueo' => $motivo,
+                    'fecha_bloqueo' => now(),
+                    'fecha_desbloqueo' => now()->addDays(7), // 7 días por defecto
+                    'bloqueado_por' => auth()->id()
+                ]);
+                break;
+
+            case 'bloqueo_permanente':
+                $reportado->update([
+                    'bloqueado' => true,
+                    'tipo_bloqueo' => 'permanente',
+                    'motivo_bloqueo' => $motivo,
+                    'fecha_bloqueo' => now(),
+                    'fecha_desbloqueo' => null,
+                    'bloqueado_por' => auth()->id()
+                ]);
+                break;
+
+            case 'reembolso':
+                // Aquí se implementaría lógica de reembolso según el sistema de pago
+                // Por ahora solo registramos en el historial
+                break;
+
+            case 'cancelacion_pedido':
+                // Cancelar pedido si existe
+                if ($report->pedido_id) {
+                    $pedido = \App\Models\Pedido::find($report->pedido_id);
+                    if ($pedido) {
+                        $pedido->update([
+                            'estado' => 'cancelado',
+                            'motivo_cancelacion' => $motivo,
+                            'cancelado_por' => auth()->id()
+                        ]);
+                    }
+                }
+                break;
+        }
     }
 
     // Mis reportes (reportes creados por el usuario autenticado)

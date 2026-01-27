@@ -52,7 +52,7 @@ export default function RegisterConsumidor({ navigation }) {
           return;
         }
         result = await ImagePicker.launchCameraAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ImagePicker.MediaType.Images,
           allowsEditing: true,
           quality: 0.5,
           base64: true,
@@ -64,7 +64,7 @@ export default function RegisterConsumidor({ navigation }) {
           return;
         }
         result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          mediaTypes: ImagePicker.MediaType.Images,
           allowsEditing: true,
           quality: 0.5,
           base64: true,

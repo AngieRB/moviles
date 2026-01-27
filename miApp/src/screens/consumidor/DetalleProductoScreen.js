@@ -1,17 +1,44 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Card, Text, Button, Divider } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import apiClient from '../../services/apiClient';
 
 export default function DetalleProductoScreen({ route, navigation }) {
-  const { producto } = route.params;
+  const { producto: productoParam, productoId } = route.params;
+  const [producto, setProducto] = useState(productoParam || null);
+  const [loading, setLoading] = useState(!productoParam);
   const [cantidad, setCantidad] = useState(1);
+
+  useEffect(() => {
+    if (!productoParam && productoId) {
+      cargarProducto();
+    }
+  }, [productoId]);
+
+  const cargarProducto = async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.get(`/productos/${productoId}`);
+      setProducto(response.data);
+    } catch (error) {
+      console.error('Error al cargar producto:', error);
+      Alert.alert(
+        'Error',
+        'No se pudo cargar el producto. Por favor intenta de nuevo.',
+        [{ text: 'OK', onPress: () => navigation.goBack() }]
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const agregarAlCarrito = () => {
     if (cantidad > producto.disponibles) {
@@ -55,6 +82,27 @@ export default function DetalleProductoScreen({ route, navigation }) {
       setCantidad(cantidad - 1);
     }
   };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4A90E2" />
+        <Text style={styles.loadingText}>Cargando producto...</Text>
+      </View>
+    );
+  }
+
+  if (!producto) {
+    return (
+      <View style={styles.errorContainer}>
+        <MaterialCommunityIcons name="alert-circle" size={64} color="#999" />
+        <Text style={styles.errorText}>Producto no encontrado</Text>
+        <Button mode="contained" onPress={() => navigation.goBack()}>
+          Volver
+        </Button>
+      </View>
+    );
+  }
 
   const precioTotal = (producto.precio * cantidad).toFixed(2);
 
@@ -116,7 +164,7 @@ export default function DetalleProductoScreen({ route, navigation }) {
             onPress={aumentarCantidad}
             disabled={cantidad >= producto.disponibles}
           >
-            <Icon
+            <MaterialCommunityIcons
               name="plus"
               size={20}
               color={cantidad >= producto.disponibles ? '#ccc' : '#4A90E2'}
@@ -164,7 +212,7 @@ export default function DetalleProductoScreen({ route, navigation }) {
           <View style={styles.caracteristica}>
             <MaterialCommunityIcons name="truck-fast" size={16} color="#FF9800" />
             <Text style={styles.caracteristicaTexto}>
-              Entrega en 24-48 horas
+              Entrega rápida
             </Text>
           </View>
           <View style={styles.caracteristica}>
@@ -202,6 +250,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    color: '#666',
+    marginTop: 16,
+    marginBottom: 24,
   },
   imagenCard: {
     margin: 12,

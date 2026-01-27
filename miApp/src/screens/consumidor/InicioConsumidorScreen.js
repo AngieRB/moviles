@@ -31,6 +31,7 @@ export default function InicioConsumidorScreen() {
   const { user } = useApp();
   const navigation = useNavigation();
   const [productos, setProductos] = useState([]);
+  const [proveedores, setProveedores] = useState([]);
   const [estadisticas, setEstadisticas] = useState({
     totalProductos: 0,
     categorias: 0,
@@ -47,19 +48,25 @@ export default function InicioConsumidorScreen() {
     try {
       setLoading(true);
       
-      // Cargar productos con timeout de 8 segundos
-      const resProductos = await apiClient.get('/productos', { timeout: 8000 });
+      // Cargar productos y proveedores en paralelo
+      const [resProductos, resProveedores] = await Promise.all([
+        apiClient.get('/productos', { timeout: 8000 }),
+        apiClient.get('/proveedores', { timeout: 8000 })
+      ]);
+      
       const productosData = resProductos.data.productos || resProductos.data || [];
+      const proveedoresData = resProveedores.data.proveedores || [];
+      
       setProductos(productosData);
+      setProveedores(proveedoresData);
 
       // Calcular estadísticas
       const categoriasUnicas = [...new Set(productosData.map(p => p.categoria))];
-      const productoresUnicos = [...new Set(productosData.map(p => p.user_id))];
       
       setEstadisticas({
         totalProductos: productosData.length,
         categorias: categoriasUnicas.length,
-        productores: productoresUnicos.length,
+        productores: proveedoresData.length,
       });
 
     } catch (error) {
@@ -141,7 +148,7 @@ export default function InicioConsumidorScreen() {
         </TouchableOpacity>
         <TouchableOpacity 
           style={styles.statCard}
-          onPress={() => navigation.navigate('ProductosTab')}
+          onPress={() => navigation.navigate('ProveedoresTab')}
           activeOpacity={0.7}
         >
           <Icon name="account-group" size={32} color="#FF6B6B" />
@@ -184,12 +191,6 @@ export default function InicioConsumidorScreen() {
           <Text style={styles.sectionTitle}>Productos Frescos</Text>
           <Text style={styles.sectionSubtitle}>Presiona para ver detalles</Text>
         </View>
-        <TouchableOpacity 
-          onPress={() => navigation.navigate('ProductosTab')}
-          style={{ marginRight: 12 }}
-        >
-          <Text style={styles.verTodos}>Ver todos →</Text>
-        </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('CarritoTab')}>
           <Icon name="cart" size={28} color="#4A90E2" />
         </TouchableOpacity>
@@ -200,14 +201,10 @@ export default function InicioConsumidorScreen() {
         showsHorizontalScrollIndicator={false}
         style={styles.productosHorizontal}
       >
-        {productos.slice(0, 6).map((producto) => (
-          <TouchableOpacity
+        {productos.slice(0, 4).map((producto) => (
+          <View
             key={producto.id}
             style={styles.productoCard}
-            onPress={() => navigation.navigate('ProductosTab', {
-              screen: 'DetalleProducto',
-              params: { productoId: producto.id }
-            })}
           >
             <View style={styles.productoImageContainer}>
               {producto.imagen && producto.imagen !== '🌾' ? (
@@ -229,8 +226,17 @@ export default function InicioConsumidorScreen() {
                 <Text style={styles.stockText}>{producto.disponibles} disponibles</Text>
               </View>
             </View>
-          </TouchableOpacity>
+          </View>
         ))}
+        
+        {/* Botón Ver más */}
+        <TouchableOpacity
+          style={styles.verMasCard}
+          onPress={() => navigation.navigate('ProductosTab')}
+        >
+          <Icon name="arrow-right-circle" size={48} color="#4A90E2" />
+          <Text style={styles.verMasText}>Ver más</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* Banner promocional */}
@@ -459,6 +465,24 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#51CF66',
     marginLeft: 4,
+  },
+  verMasCard: {
+    width: 140,
+    height: 200,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 16,
+    marginRight: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#4A90E2',
+    borderStyle: 'dashed',
+  },
+  verMasText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#4A90E2',
+    marginTop: 8,
   },
   promoBanner: {
     flexDirection: 'row',

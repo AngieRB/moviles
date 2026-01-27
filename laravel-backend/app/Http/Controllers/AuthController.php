@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\ImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -56,6 +57,7 @@ class AuthController extends Controller
                 'telefono' => $user->telefono,
                 'role' => $user->role,
                 'cedula' => $user->cedula,
+                'foto_perfil' => $user->foto_perfil,
                 'roleData' => $user->role_data, // Ya es un array gracias a 'casts'
             ],
             'token' => $token,
@@ -74,10 +76,20 @@ class AuthController extends Controller
             'telefono' => 'required|digits:10',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:8|regex:/^(?=.*[a-zA-Z])(?=.*\d).+$/',
+            'foto_perfil' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Procesar foto de perfil si existe
+        $rutaFoto = null;
+        if ($request->hasFile('foto_perfil')) {
+            $imagen = $request->file('foto_perfil');
+            if (ImageService::validarImagen($imagen)) {
+                $rutaFoto = ImageService::guardarFotoUsuario($imagen, $request->cedula, 'consumidor');
+            }
         }
 
         $user = User::create([
@@ -88,6 +100,7 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => 'consumidor',
+            'foto_perfil' => $rutaFoto,
             // Pasamos un array directo, el Modelo lo convertirá a JSON solo
             'role_data' => ['direccion' => ''],
         ]);
@@ -126,10 +139,20 @@ class AuthController extends Controller
             'areaCultivo' => 'nullable|string',
             'fotoCedula' => 'nullable|string',
             'fotoFinca' => 'nullable|string',
+            'foto_perfil' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        // Procesar foto de perfil si existe
+        $rutaFoto = null;
+        if ($request->hasFile('foto_perfil')) {
+            $imagen = $request->file('foto_perfil');
+            if (ImageService::validarImagen($imagen)) {
+                $rutaFoto = ImageService::guardarFotoUsuario($imagen, $request->cedula, 'productor');
+            }
         }
 
         $user = User::create([
@@ -140,6 +163,7 @@ class AuthController extends Controller
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => 'productor',
+            'foto_perfil' => $rutaFoto,
             // Pasamos ARRAY directo. Laravel lo guarda como JSON gracias al cast.
             'role_data' => [
                 'nombreFinca' => $request->nombreFinca,
@@ -327,11 +351,77 @@ class AuthController extends Controller
             return response()->json(['message' => 'No se puede eliminar un administrador'], 400);
         }
 
+        // Eliminar foto de perfil si existe
+        if ($usuario->foto_perfil) {
+            ImageService::eliminarFotoUsuario($usuario->foto_perfil);
+        }
+
         $nombre = $usuario->name;
         $usuario->delete();
 
         return response()->json([
             'message' => "Usuario {$nombre} eliminado exitosamente",
         ], 200);
+    }
+
+    /**
+     * Actualizar foto de perfil del usuario autenticado
+     */
+    public function actualizarFotoPerfil(Request $request)
+    {
+        \Log::info('Iniciando actualización de foto de perfil');
+        \Log::info('Usuario autenticado: ' . $request->user()->id);
+        \Log::info('Archivo recibido: ' . ($request->hasFile('foto_perfil') ? 'SI' : 'NO'));
+        
+        $validator = Validator::make($request->all(), [
+            'foto_perfil' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
+        ]);
+
+        if ($validator->fails()) {
+            \Log::error('Validación fallida: ' . json_encode($validator->errors()));
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+        $user = $request->user();
+
+        if (!$user->cedula) {
+            return response()->json(['message' => 'El usuario no tiene cédula registrada'], 400);
+        }
+
+        try {
+            $imagen = $request->file('foto_perfil');
+            
+            if (!ImageService::validarImagen($imagen)) {
+                return response()->json(['message' => 'Imagen inválida o muy grande (máx 5MB)'], 400);
+            }
+
+            // Eliminar foto anterior si existe
+            if ($user->foto_perfil) {
+                ImageService::eliminarFotoUsuario($user->foto_perfil);
+            }
+
+            // Guardar nueva foto
+            $rutaFoto = ImageService::guardarFotoUsuario($imagen, $user->cedula, $user->role);
+
+            if (!$rutaFoto) {
+                \Log::error('Error: ImageService no pudo guardar la foto');
+                return response()->json(['message' => 'Error al guardar la imagen'], 500);
+            }
+
+            \Log::info('Foto guardada en: ' . $rutaFoto);
+
+            $user->foto_perfil = $rutaFoto;
+            $user->save();
+
+            \Log::info('Usuario actualizado en BD. foto_perfil: ' . $user->foto_perfil);
+
+            return response()->json([
+                'message' => 'Foto de perfil actualizada exitosamente',
+                'foto_perfil' => $rutaFoto,
+            ], 200);
+        } catch (\Exception $e) {
+            \Log::error('Error actualizando foto de perfil: ' . $e->getMessage());
+            return response()->json(['message' => 'Error al actualizar foto de perfil'], 500);
+        }
     }
 }

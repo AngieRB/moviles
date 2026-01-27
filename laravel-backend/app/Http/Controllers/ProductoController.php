@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Producto;
+use App\Services\ImageService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -10,10 +11,12 @@ class ProductoController extends Controller
 {
     /**
      * Listar todos los productos (para consumidores)
+     * Solo muestra productos disponibles
      */
     public function index(Request $request)
     {
-        $query = Producto::with('productor:id,name,apellido')->where('disponibles', '>', 0);
+        $query = Producto::with('productor:id,name,apellido')
+            ->where('disponibles', '>', 0);
 
         // Filtrar por búsqueda
         if ($request->has('search')) {
@@ -34,6 +37,7 @@ class ProductoController extends Controller
                 'calificacion' => $producto->calificacion,
                 'imagen' => $producto->imagen,
                 'disponibles' => $producto->disponibles,
+                'disponible' => $producto->disponible,
                 'productor' => $producto->productor->name . ' ' . $producto->productor->apellido,
                 'descripcion' => $producto->descripcion,
             ];
@@ -64,6 +68,7 @@ class ProductoController extends Controller
                 'calificacion' => $producto->calificacion,
                 'imagen' => $producto->imagen,
                 'disponibles' => $producto->disponibles,
+                'disponible' => $producto->disponible,
                 'descripcion' => $producto->descripcion,
                 'productor' => [
                     'id' => $producto->productor->id,
@@ -76,10 +81,14 @@ class ProductoController extends Controller
 
     /**
      * Listar productos del productor autenticado
+     * Muestra TODOS los productos (disponibles y ocultos)
      */
     public function misProductos(Request $request)
     {
-        $productos = Producto::where('user_id', $request->user()->id)->get();
+        $productos = Producto::where('user_id', $request->user()->id)
+            ->orderBy('disponible', 'desc') // Primero los disponibles
+            ->orderBy('created_at', 'desc')
+            ->get();
 
         return response()->json([
             'productos' => $productos,
@@ -108,7 +117,7 @@ class ProductoController extends Controller
             'precio' => 'required|numeric|min:0',
             'disponibles' => 'required|integer|min:0',
             'descripcion' => 'nullable|string',
-            'imagen' => 'nullable|string',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
         if ($validator->fails()) {
@@ -117,16 +126,29 @@ class ProductoController extends Controller
         }
 
         try {
+            // Crear el producto primero para obtener el ID
             $producto = Producto::create([
                 'nombre' => $request->nombre,
                 'categoria' => $request->categoria,
                 'precio' => $request->precio,
                 'disponibles' => $request->disponibles,
                 'descripcion' => $request->descripcion ?? '',
-                'imagen' => $request->imagen ?? '📦',
+                'imagen' => '📦', // Temporal
                 'calificacion' => 0,
                 'user_id' => $request->user()->id,
             ]);
+            
+            // Procesar imagen si existe
+            if ($request->hasFile('imagen')) {
+                $imagen = $request->file('imagen');
+                if (ImageService::validarImagen($imagen)) {
+                    $rutaImagen = ImageService::guardarImagenProducto($imagen, $producto->id, $request->nombre);
+                    if ($rutaImagen) {
+                        $producto->imagen = $rutaImagen;
+                        $producto->save();
+                    }
+                }
+            }
             
             \Log::info('Producto creado exitosamente:', ['id' => $producto->id]);
 
@@ -162,16 +184,36 @@ class ProductoController extends Controller
             'precio' => 'sometimes|numeric|min:0',
             'disponibles' => 'sometimes|integer|min:0',
             'descripcion' => 'nullable|string',
-            'imagen' => 'nullable|string',
+            'imagen' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:5120',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $producto->update($request->only([
-            'nombre', 'categoria', 'precio', 'disponibles', 'descripcion', 'imagen'
+        // Actualizar campos básicos
+        $producto->fill($request->only([
+            'nombre', 'categoria', 'precio', 'disponibles', 'descripcion'
         ]));
+
+        // Procesar nueva imagen si existe
+        if ($request->hasFile('imagen')) {
+            $imagen = $request->file('imagen');
+            if (ImageService::validarImagen($imagen)) {
+                // Eliminar imagen anterior
+                if ($producto->imagen && !str_starts_with($producto->imagen, 'http')) {
+                    ImageService::eliminarImagenProducto($producto->imagen);
+                }
+                
+                // Guardar nueva imagen
+                $rutaImagen = ImageService::guardarImagenProducto($imagen, $producto->id, $producto->nombre);
+                if ($rutaImagen) {
+                    $producto->imagen = $rutaImagen;
+                }
+            }
+        }
+
+        $producto->save();
 
         return response()->json([
             'message' => 'Producto actualizado exitosamente',
@@ -180,7 +222,8 @@ class ProductoController extends Controller
     }
 
     /**
-     * Eliminar producto
+     * Ocultar producto (no lo elimina, solo lo hace invisible)
+     * Útil para productos fuera de temporada
      */
     public function destroy(Request $request, $id)
     {
@@ -195,10 +238,78 @@ class ProductoController extends Controller
             return response()->json(['message' => 'No autorizado'], 403);
         }
 
+        // En lugar de eliminar, ocultar el producto
+        $producto->disponible = false;
+        $producto->save();
+
+        return response()->json([
+            'message' => 'Producto ocultado exitosamente. Podrás mostrarlo nuevamente cuando esté en temporada.',
+            'producto' => $producto
+        ], 200);
+    }
+
+    /**
+     * Cambiar disponibilidad del producto (mostrar/ocultar)
+     */
+    public function toggleDisponibilidad(Request $request, $id)
+    {
+        $producto = Producto::find($id);
+
+        if (!$producto) {
+            return response()->json(['message' => 'Producto no encontrado'], 404);
+        }
+
+        // Verificar que el usuario es el dueño del producto
+        if ($producto->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        // Cambiar disponibilidad
+        $producto->disponible = !$producto->disponible;
+        $producto->save();
+
+        $mensaje = $producto->disponible 
+            ? 'Producto mostrado. Ahora es visible para los consumidores.'
+            : 'Producto ocultado. Ya no es visible para los consumidores.';
+
+        return response()->json([
+            'message' => $mensaje,
+            'producto' => $producto
+        ], 200);
+    }
+
+    /**
+     * Eliminar producto permanentemente (solo si está oculto)
+     */
+    public function eliminarPermanente(Request $request, $id)
+    {
+        $producto = Producto::find($id);
+
+        if (!$producto) {
+            return response()->json(['message' => 'Producto no encontrado'], 404);
+        }
+
+        // Verificar que el usuario es el dueño del producto
+        if ($producto->user_id !== $request->user()->id) {
+            return response()->json(['message' => 'No autorizado'], 403);
+        }
+
+        // Solo permitir eliminar si está oculto
+        if ($producto->disponible) {
+            return response()->json([
+                'message' => 'Debes ocultar el producto antes de eliminarlo permanentemente'
+            ], 400);
+        }
+
+        // Eliminar imagen del producto si existe
+        if ($producto->imagen && !str_starts_with($producto->imagen, 'http')) {
+            ImageService::eliminarImagenProducto($producto->imagen);
+        }
+
         $producto->delete();
 
         return response()->json([
-            'message' => 'Producto eliminado exitosamente',
+            'message' => 'Producto eliminado permanentemente',
         ], 200);
     }
 

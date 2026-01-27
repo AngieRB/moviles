@@ -64,12 +64,7 @@ export default function ProductosScreen({ navigation, route }) {
   });
 
   const renderProducto = ({ item }) => (
-    <TouchableOpacity
-      style={styles.cardContainer}
-      onPress={() =>
-        navigation.navigate('DetalleProducto', { producto: item })
-      }
-    >
+    <View style={styles.cardContainer}>
       <Card style={styles.card}>
         <View style={styles.cardContent}>
           <Text style={styles.imagenProducto}>{item.imagen}</Text>
@@ -85,19 +80,29 @@ export default function ProductosScreen({ navigation, route }) {
                 ({item.disponibles} disponibles)
               </Text>
             </View>
+            <TouchableOpacity 
+              style={styles.detallesButton}
+              onPress={() => navigation.navigate('DetalleProducto', { producto: item })}
+            >
+              <MaterialCommunityIcons name="information-outline" size={16} color="#4A90E2" />
+              <Text style={styles.detallesText}>Ver detalles</Text>
+            </TouchableOpacity>
           </View>
           <View style={styles.precioContainer}>
             <Text style={styles.precio}>${parseFloat(item.precio).toFixed(2)}</Text>
             <TouchableOpacity 
               style={styles.addButton}
-              onPress={() => agregarAlCarrito(item, 1)}
+              onPress={(e) => {
+                e.stopPropagation();
+                agregarAlCarrito(item, 1);
+              }}
             >
               <MaterialCommunityIcons name="plus-circle" size={32} color="#4A90E2" />
             </TouchableOpacity>
           </View>
         </View>
       </Card>
-    </TouchableOpacity>
+    </View>
   );
 
   if (loading && !refreshing) {
@@ -111,14 +116,18 @@ export default function ProductosScreen({ navigation, route }) {
 
   return (
     <View style={styles.container}>
-      <Searchbar
-        placeholder="Buscar productos..."
-        onChangeText={setSearchQuery}
-        value={searchQuery}
-        style={styles.searchbar}
-      />
-
-      <FlatList
+      {/* Sticky Header con Search */}
+      <View style={styles.stickyHeader}>
+        <Searchbar
+          placeholder="Buscar productos..."
+          onChangeText={setSearchQuery}
+          value={searchQuery}
+          style={styles.searchbar}
+          elevation={1}
+        />
+        
+        {/* Categorías horizontales sticky */}
+        <FlatList
           data={categorias}
           renderItem={({ item }) => (
             <TouchableOpacity
@@ -139,6 +148,7 @@ export default function ProductosScreen({ navigation, route }) {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.categoriesContainer}
         />
+      </View>
 
       {loading && !refreshing ? (
         <ActivityIndicator
@@ -152,6 +162,7 @@ export default function ProductosScreen({ navigation, route }) {
           renderItem={renderProducto}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContainer}
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl
               refreshing={refreshing}
@@ -187,14 +198,25 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
   },
+  stickyHeader: {
+    backgroundColor: '#f5f5f5',
+    paddingBottom: 8,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    zIndex: 1000,
+  },
   searchbar: {
     margin: 12,
-    elevation: 2,
+    marginBottom: 8,
+    elevation: 1,
+    backgroundColor: '#fff',
   },
   categoriesContainer: {
-    paddingHorizontal: 0,
+    paddingHorizontal: 12,
     paddingVertical: 4,
-    marginBottom: 2,
     flexDirection: 'row',
   },
   pill: {
@@ -272,6 +294,22 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#999',
     marginLeft: 8,
+  },
+  detallesButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    backgroundColor: '#E3F2FD',
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+  },
+  detallesText: {
+    fontSize: 12,
+    color: '#4A90E2',
+    fontWeight: '600',
+    marginLeft: 4,
   },
   precioContainer: {
     alignItems: 'center',

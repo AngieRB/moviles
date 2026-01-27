@@ -20,12 +20,16 @@ class Report extends Model
         'evidencias',
         'estado',
         'respuesta_admin',
+        'accion_admin',
+        'historial_acciones',
+        'prioridad',
         'fecha_revision',
         'revisado_por'
     ];
 
     protected $casts = [
         'evidencias' => 'array',
+        'historial_acciones' => 'array',
         'fecha_revision' => 'datetime',
         'created_at' => 'datetime',
         'updated_at' => 'datetime'

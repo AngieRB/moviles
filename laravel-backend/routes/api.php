@@ -11,6 +11,7 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\NotificacionController;
 use App\Http\Controllers\StripeController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\ProveedorController;
 
 // ============================================
 // RUTAS PÚBLICAS (Sin autenticación)
@@ -38,6 +39,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
+    // Actualizar foto de perfil
+    Route::post('/actualizar-foto-perfil', [AuthController::class, 'actualizarFotoPerfil']);
+
     // Listar usuarios por rol
     Route::get('/usuarios', [AuthController::class, 'listarUsuarios']);
 
@@ -52,7 +56,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/productos', [ProductoController::class, 'store']);
     Route::post('/productos/agregar', [ProductoController::class, 'addProduct']);
     Route::put('/productos/{id}', [ProductoController::class, 'update']);
-    Route::delete('/productos/{id}', [ProductoController::class, 'destroy']);
+    Route::delete('/productos/{id}', [ProductoController::class, 'destroy']); // Ocultar producto
+    Route::patch('/productos/{id}/disponibilidad', [ProductoController::class, 'toggleDisponibilidad']); // Mostrar/Ocultar
+    Route::delete('/productos/{id}/eliminar-permanente', [ProductoController::class, 'eliminarPermanente']); // Eliminación definitiva
+
+    // ============================================
+    // PROVEEDORES (para consumidores)
+    // ============================================
+
+    Route::get('/proveedores', [ProveedorController::class, 'index']); // Listar proveedores verificados
+    Route::get('/proveedores/{id}', [ProveedorController::class, 'show']); // Perfil completo de proveedor
+    Route::get('/proveedores/{id}/productos', [ProveedorController::class, 'productos']); // Productos del proveedor
 
     // ============================================
     // CARRITO (solo consumidores)

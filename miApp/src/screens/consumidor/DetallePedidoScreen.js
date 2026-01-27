@@ -388,10 +388,14 @@ export default function DetallePedidoScreen({ route, navigation }) {
 
         <Button
           mode="outlined"
-          onPress={() => Linking.openURL('mailto:soporte@agroconnect.com')}
+          onPress={() => navigation.navigate('ReportesTab', {
+            screen: 'CrearReporte',
+            params: { pedidoId: pedido.id }
+          })}
           style={styles.btnAccion}
+          icon="alert-octagon"
         >
-          📧 Contactar soporte
+          Reportar pedido
         </Button>
 
         <Button

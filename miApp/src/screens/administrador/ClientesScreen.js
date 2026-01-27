@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { View, ScrollView, StyleSheet, RefreshControl, Alert, Platform, Linking } from 'react-native';
-import { Card, Text, Button, Chip, Searchbar, ActivityIndicator, Portal, Dialog, Divider } from 'react-native-paper';
+import { Card, Text, Button, Chip, Searchbar, ActivityIndicator, Portal, Dialog, Divider, Avatar } from 'react-native-paper';
 import { MaterialCommunityIcons as Icon } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import apiClient from '../../services/apiClient';
@@ -91,16 +91,20 @@ export default function ClientesScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Barra de búsqueda */}
-      <Searchbar
-        placeholder="Buscar cliente..."
-        onChangeText={setSearchQuery}
-        value={searchQuery}
-        style={styles.searchbar}
-      />
+      {/* Sticky Search Bar */}
+      <View style={styles.stickyHeader}>
+        <Searchbar
+          placeholder="Buscar cliente..."
+          onChangeText={setSearchQuery}
+          value={searchQuery}
+          style={styles.searchbar}
+          elevation={1}
+        />
+      </View>
 
       <ScrollView
         style={styles.scrollView}
+        showsVerticalScrollIndicator={false}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#4A90E2']} />
         }
@@ -116,7 +120,18 @@ export default function ClientesScreen() {
               <Card.Content>
                 <View style={styles.cardHeader}>
                   <View style={styles.avatarContainer}>
-                    <Icon name="account-circle" size={50} color="#4A90E2" />
+                    {cliente.foto_perfil ? (
+                      <Avatar.Image
+                        size={50}
+                        source={{ uri: `http://192.168.10.243:8000/storage/${cliente.foto_perfil}` }}
+                      />
+                    ) : (
+                      <Avatar.Icon
+                        size={50}
+                        icon="account-circle"
+                        style={{ backgroundColor: '#4A90E2' }}
+                      />
+                    )}
                   </View>
                   <View style={styles.infoContainer}>
                     <Text style={styles.nombre}>{cliente.nombre} {cliente.apellido}</Text>
@@ -232,9 +247,21 @@ const styles = StyleSheet.create({
     marginTop: 10,
     color: '#666',
   },
+  stickyHeader: {
+    backgroundColor: '#f5f5f5',
+    paddingBottom: 4,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    zIndex: 1000,
+  },
   searchbar: {
     margin: 12,
-    elevation: 2,
+    marginBottom: 8,
+    elevation: 1,
+    backgroundColor: '#fff',
   },
   statsContainer: {
     flexDirection: 'row',
